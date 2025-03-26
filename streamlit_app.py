@@ -32,13 +32,13 @@ if uploaded_file:
     result = vision_response.json()
     
     try:
-if (
-    isinstance(result, dict) and
-    "responses" in result and
-    isinstance(result["responses"], list) and
-    len(result["responses"]) > 0 and
-    "fullTextAnnotation" in result["responses"][0]
-):
+        if (
+            isinstance(result, dict) and
+            "responses" in result and
+            isinstance(result["responses"], list) and
+            len(result["responses"]) > 0 and
+            "fullTextAnnotation" in result["responses"][0]
+        ):
 
     text = result["responses"][0]["fullTextAnnotation"]["text"]
     st.text_area("📝 Raw Extracted Text", text, height=200)
