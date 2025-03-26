@@ -32,7 +32,32 @@ if uploaded_file:
     result = vision_response.json()
     
     try:
-        text = result["responses"][0]["fullTextAnnotation"]["text"]
+      if "responses" in result and "fullTextAnnotation" in result["responses"][0]:
+    text = result["responses"][0]["fullTextAnnotation"]["text"]
+    st.text_area("📝 Raw Extracted Text", text, height=200)
+
+    # --- ChatGPT Prompt ---
+    st.subheader("Generating Pen Portrait...")
+    prompt = f"""
+    You are a food data analyst for a nutrition startup. A user has uploaded a receipt containing the following grocery items:
+
+    {text}
+
+    Clean this data (no hallucinations or assumptions). Then, generate a short Pen Portrait describing what this household likely eats, buys, and prefers based on the receipt.
+    """
+
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    pen_portrait = response['choices'][0]['message']['content']
+    st.markdown("### 🪞 Your Household's Pen Portrait:")
+    st.markdown(pen_portrait)
+
+else:
+    st.error("No text detected. Please try another image or ensure the receipt is well-lit and readable.")
+
         st.text_area("📝 Raw Extracted Text", text, height=200)
 
         # --- ChatGPT Prompt ---
