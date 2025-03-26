@@ -57,4 +57,3 @@ if uploaded_file:
     except Exception as e:
         st.error("There was a problem extracting text or generating the Pen Portrait.")
         st.exception(e)
-
