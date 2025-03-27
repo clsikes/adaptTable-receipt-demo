@@ -126,6 +126,10 @@ if proceed:
             cleaned_items_output = response.choices[0].message.content
             st.markdown("### 🧾 Master Shopping Record:")
             st.markdown(cleaned_items_output)
+        except Exception as e:
+            st.error("There was a problem extracting text or generating the shopping record.")
+            st.exception(e)
+
 
           # --- ChatGPT Prompt: RDN Pen Portrait ---
         st.subheader("🩺 Household Behavior Profile")
