@@ -180,10 +180,4 @@ if proceed:
         st.exception(e)
 
 
-        else:
-            st.error("No text detected. Please try another image or ensure the receipt is well-lit and readable.")
-
-    except Exception as e:
-        st.error("There was a problem extracting text or generating the shopping record.")
-        st.exception(e)
-
+    
