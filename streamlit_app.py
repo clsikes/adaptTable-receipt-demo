@@ -30,62 +30,39 @@ if uploaded_file:
 
     vision_response = requests.post(vision_url, json=vision_payload)
     result = vision_response.json()
-    
-   try:
-    if (
-        isinstance(result, dict) and
-        "responses" in result and
-        isinstance(result["responses"], list) and
-        len(result["responses"]) > 0 and
-        "fullTextAnnotation" in result["responses"][0]
-    ):
-        text = result["responses"][0]["fullTextAnnotation"]["text"]
-        st.text_area("📝 Raw Extracted Text", text, height=200)
 
-        # --- ChatGPT Prompt ---
-        st.subheader("Generating Pen Portrait...")
-        prompt = f"""
-        You are a food data analyst for a nutrition startup. A user has uploaded a receipt containing the following grocery items:
+    try:
+        if (
+            isinstance(result, dict) and
+            "responses" in result and
+            isinstance(result["responses"], list) and
+            len(result["responses"]) > 0 and
+            "fullTextAnnotation" in result["responses"][0]
+        ):
+            text = result["responses"][0]["fullTextAnnotation"]["text"]
+            st.text_area("📝 Raw Extracted Text", text, height=200)
 
-        {text}
+            # --- ChatGPT Prompt ---
+            st.subheader("Generating Pen Portrait...")
+            prompt = f"""
+            You are a food data analyst for a nutrition startup. A user has uploaded a receipt containing the following grocery items:
 
-        Clean this data (no hallucinations or assumptions). Then, generate a short Pen Portrait describing what this household likely eats, buys, and prefers based on the receipt.
-        """
+            {text}
 
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": prompt}]
-        )
+            Clean this data (no hallucinations or assumptions). Then, generate a short Pen Portrait describing what this household likely eats, buys, and prefers based on the receipt.
+            """
 
-        pen_portrait = response['choices'][0]['message']['content']
-        st.markdown("### 🪞 Your Household's Pen Portrait:")
-        st.markdown(pen_portrait)
+            response = openai.ChatCompletion.create(
+                model="gpt-4",
+                messages=[{"role": "user", "content": prompt}]
+            )
 
-    else:
-        st.error("No text detected. Please try another image or ensure the receipt is well-lit and readable.")
+            pen_portrait = response['choices'][0]['message']['content']
+            st.markdown("### 🪞 Your Household's Pen Portrait:")
+            st.markdown(pen_portrait)
 
-except Exception as e:
-    st.error("There was a problem extracting text or generating the Pen Portrait.")
-    st.exception(e)
-
-        # --- ChatGPT Prompt ---
-        st.subheader("Generating Pen Portrait...")
-        prompt = f"""
-        You are a food data analyst for a nutrition startup. A user has uploaded a receipt containing the following grocery items:
-
-        {text}
-
-        Clean this data (no hallucinations or assumptions). Then, generate a short Pen Portrait describing what this household likely eats, buys, and prefers based on the receipt.
-        """
-
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": prompt}]
-        )
-
-        pen_portrait = response['choices'][0]['message']['content']
-        st.markdown("### 🪞 Your Household's Pen Portrait:")
-        st.markdown(pen_portrait)
+        else:
+            st.error("No text detected. Please try another image or ensure the receipt is well-lit and readable.")
 
     except Exception as e:
         st.error("There was a problem extracting text or generating the Pen Portrait.")
