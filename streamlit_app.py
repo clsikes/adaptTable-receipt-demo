@@ -117,7 +117,7 @@ if proceed:
             Extracted Receipt Text:
             {text}
             """
-
+        try:
             response = client.chat.completions.create(
                 model="gpt-4",
                 messages=[{"role": "user", "content": prompt}]
