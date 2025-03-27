@@ -193,5 +193,4 @@ if proceed:
         st.error("There was a problem generating the Household Profile.")
         st.exception(e)
 
-        else:
-            st.error("No text detected. Please try another image or ensure the receipt is well-lit and readable.")
+        
