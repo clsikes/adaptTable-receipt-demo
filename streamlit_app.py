@@ -1,11 +1,13 @@
 import streamlit as st
-import openai
+from openai import OpenAI
 import base64
 import requests
 
 # --- API Keys ---
 GOOGLE_VISION_API_KEY = st.secrets["google_api_key"]
 OPENAI_API_KEY = st.secrets["openai_api_key"]
+client = OpenAI(api_key=OPENAI_API_KEY) 
+
 openai.api_key = OPENAI_API_KEY
 
 # --- App Title ---
@@ -57,12 +59,13 @@ if uploaded_file:
             Clean this data (no hallucinations or assumptions). Then, generate a short Pen Portrait describing what this household likely eats, buys, and prefers based on the receipt.
             """
 
-            response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model="gpt-4",
                 messages=[{"role": "user", "content": prompt}]
             )
 
-            pen_portrait = response['choices'][0]['message']['content']
+            pen_portrait = response.choices[0].message.content
+
             st.markdown("### 🪞 Your Household's Pen Portrait:")
             st.markdown(pen_portrait)
 
