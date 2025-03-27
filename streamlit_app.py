@@ -127,7 +127,7 @@ if proceed:
             st.markdown("### 🧾 Master Shopping Record:")
             st.markdown(cleaned_items_output)
 
-        # --- ChatGPT Prompt: RDN Pen Portrait ---
+          # --- ChatGPT Prompt: RDN Pen Portrait ---
     st.subheader("🩺 Household Behavior Profile")
 
     pen_portrait_prompt = f"""
@@ -178,6 +178,3 @@ if proceed:
     except Exception as e:
         st.error("There was a problem generating the Household Profile.")
         st.exception(e)
-
-
-    
