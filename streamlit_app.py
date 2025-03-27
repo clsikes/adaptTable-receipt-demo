@@ -9,8 +9,21 @@ OPENAI_API_KEY = st.secrets["openai_api_key"]
 client = OpenAI(api_key=OPENAI_API_KEY) 
 
 
-# --- App Title ---
-st.title("🧾 adaptTable Receipt Analyzer")
+# --- Styled Logo Header ---
+st.markdown(
+    "<h1 style='font-family: Poppins, sans-serif; color: rgb(37,36,131); font-size: 2.5rem;'>AdaptTable</h1>",
+    unsafe_allow_html=True
+)
+
+# --- Welcome Message ---
+st.markdown("""
+#### 👋 Welcome to AdaptTable – your household health co-pilot.
+
+I’m here to help you meet your family’s health goals through smarter, easier food choices.
+
+To get started, I’ll take a look at your recent grocery receipts. This helps me understand your household’s food habits so I can tailor guidance to your family’s needs.
+""")
+
 
 # --- File Upload ---
 uploaded_file = st.file_uploader("Upload your grocery receipt image", type=["jpg", "jpeg", "png"])
