@@ -6,7 +6,7 @@ import requests
 # --- API Keys ---
 GOOGLE_VISION_API_KEY = st.secrets["google_api_key"]
 OPENAI_API_KEY = st.secrets["openai_api_key"]
-client = OpenAI(api_key=OPENAI_API_KEY) 
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 # --- Styled Logo Header ---
 st.markdown(
@@ -49,26 +49,23 @@ if st.session_state.uploaded_receipts:
 else:
     proceed = False
 
-# --- If User Chooses to Proceed ---
+# --- Text Extraction and Master Shopping Record Generation ---
 if proceed:
+    for uploaded_file in st.session_state.uploaded_receipts:
+        image_content = uploaded_file.read()
+        image_base64 = base64.b64encode(image_content).decode("utf-8")
 
-    # --- Google Vision API Call ---
-    last_uploaded_file = st.session_state.uploaded_receipts[-1]
-    image_content = last_uploaded_file.read()
-    image_base64 = base64.b64encode(image_content).decode("utf-8")
+        vision_url = f"https://vision.googleapis.com/v1/images:annotate?key={GOOGLE_VISION_API_KEY}"
+        vision_payload = {
+            "requests": [{
+                "image": {"content": image_base64},
+                "features": [{"type": "TEXT_DETECTION"}]
+            }]
+        }
 
-    vision_url = f"https://vision.googleapis.com/v1/images:annotate?key={GOOGLE_VISION_API_KEY}"
-    vision_payload = {
-        "requests": [{
-            "image": {"content": image_base64},
-            "features": [{"type": "TEXT_DETECTION"}]
-        }]
-    }
+        vision_response = requests.post(vision_url, json=vision_payload)
+        result = vision_response.json()
 
-    vision_response = requests.post(vision_url, json=vision_payload)
-    result = vision_response.json()
-
-    try:
         if (
             isinstance(result, dict) and
             "responses" in result and
@@ -117,68 +114,72 @@ if proceed:
             Extracted Receipt Text:
             {text}
             """
-        try:
-            response = client.chat.completions.create(
-                model="gpt-4",
-                messages=[{"role": "user", "content": prompt}]
-            )
 
-            cleaned_items_output = response.choices[0].message.content
-            st.markdown("### 🧾 Master Shopping Record:")
-            st.markdown(cleaned_items_output)
-        except Exception as e:
-            st.error("There was a problem extracting text or generating the shopping record.")
-            st.exception(e)
+            try:
+                response = client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[{"role": "user", "content": prompt}]
+                )
 
+                cleaned_items_output = response.choices[0].message.content
+                st.markdown("### 🧾 Master Shopping Record:")
+                st.markdown(cleaned_items_output)
 
-          # --- ChatGPT Prompt: RDN Pen Portrait ---
-        st.subheader("🩺 Household Behavior Profile")
-    
-        pen_portrait_prompt = f"""
-        You are an experienced and empathetic pediatric Registered Dietitian Nutritionist (RDN) specializing in Type 1 Diabetes (T1D) management. Your goal is to analyze this household’s grocery shopping patterns based on their Master Shop Record (a scanned list of recent grocery purchases).
-    
-        Step 1: Extract all food items from the Master Shop Record, ensuring:
-        ✅ No hallucination of extra food items (do not add or remove anything).
-        ✅ Accurate categorization of each item based on official classifications from USDA FoodData Central & Open Food Facts (do not manually assign categories before extraction).
-    
-        Step 2: Identify and analyze shopping patterns, including:
-        ✅ Recurring food categories (proteins, grains, snacks, dairy, etc.).
-        ✅ Household size & composition (if inferable).
-        ✅ Meal preparation habits (home-cooked vs. convenience).
-        ✅ Spending habits & cost-saving behaviors (bulk purchases, store brands).
-        ✅ Dietary preferences or restrictions (gluten-free, plant-based, etc.).
-        ✅ Brand preferences.
-        ✅ Lifestyle indicators (busy, active, social) – only if patterns are statistically significant (>60% confidence).
-        ✅ Unexpected patterns (e.g., cultural preferences, frequent use of specific ingredients).
-    
-        Step 3: Summarize the findings in a conversational, empathetic narrative household profile.
-        • Ensure the full analysis is complete before submission.
-        • Avoid premature conclusions—submit only after identifying all relevant trends.
-    
-        Format your response as follows:
-    
-        ### Narrative Household Profile:
-        [Insert 3–5 sentence summary here]
-    
-        ### Notable Shopping Trends:
-        - [Bullet point trend 1]
-        - [Bullet point trend 2]
-        - [Bullet point trend 3]
-        (Include 3–5 trends only)
-    
-        Master Shop Record:
-        {text}
-        """
-    
-        try:
-            pen_portrait_response = client.chat.completions.create(
-                model="gpt-4",
-                messages=[{"role": "user", "content": pen_portrait_prompt}]
-            )
-    
-            pen_portrait_output = pen_portrait_response.choices[0].message.content
-            st.markdown(pen_portrait_output)
-    
-        except Exception as e:
-            st.error("There was a problem generating the Household Profile.")
-            st.exception(e)
+            except Exception as e:
+                st.error("There was a problem extracting text or generating the shopping record.")
+                st.exception(e)
+
+            # --- ChatGPT Prompt: RDN Pen Portrait ---
+            st.subheader("🩺 Household Behavior Profile")
+
+            pen_portrait_prompt = f"""
+            You are an experienced and empathetic pediatric Registered Dietitian Nutritionist (RDN) specializing in Type 1 Diabetes (T1D) management. Your goal is to analyze this household’s grocery shopping patterns based on their Master Shop Record (a scanned list of recent grocery purchases).
+
+            Step 1: Extract all food items from the Master Shop Record, ensuring:
+            ✅ No hallucination of extra food items (do not add or remove anything).
+            ✅ Accurate categorization of each item based on official classifications from USDA FoodData Central & Open Food Facts (do not manually assign categories before extraction).
+
+            Step 2: Identify and analyze shopping patterns, including:
+            ✅ Recurring food categories (proteins, grains, snacks, dairy, etc.).
+            ✅ Household size & composition (if inferable).
+            ✅ Meal preparation habits (home-cooked vs. convenience).
+            ✅ Spending habits & cost-saving behaviors (bulk purchases, store brands).
+            ✅ Dietary preferences or restrictions (gluten-free, plant-based, etc.).
+            ✅ Brand preferences.
+            ✅ Lifestyle indicators (busy, active, social) – only if patterns are statistically significant (>60% confidence).
+            ✅ Unexpected patterns (e.g., cultural preferences, frequent use of specific ingredients).
+
+            Step 3: Summarize the findings in a conversational, empathetic narrative household profile.
+            • Ensure the full analysis is complete before submission.
+            • Avoid premature conclusions—submit only after identifying all relevant trends.
+
+            Format your response as follows:
+
+            ### Narrative Household Profile:
+            [Insert 3–5 sentence summary here]
+
+            ### Notable Shopping Trends:
+            - [Bullet point trend 1]
+            - [Bullet point trend 2]
+            - [Bullet point trend 3]
+            (Include 3–5 trends only)
+
+            Master Shop Record:
+            {text}
+            """
+
+            try:
+                pen_portrait_response = client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[{"role": "user", "content": pen_portrait_prompt}]
+                )
+
+                pen_portrait_output = pen_portrait_response.choices[0].message.content
+                st.markdown(pen_portrait_output)
+
+            except Exception as e:
+                st.error("There was a problem generating the Household Profile.")
+                st.exception(e)
+
+        else:
+            st.error("No text detected. Please try another image or ensure the receipt is well-lit and readable.")
