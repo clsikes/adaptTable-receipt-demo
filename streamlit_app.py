@@ -36,7 +36,9 @@ if new_receipt is not None:
 
 # --- Show Receipt Count ---
 if st.session_state.uploaded_receipts:
-    st.markdown(f"📥 **{len(st.session_state.uploaded_receipts)} receipt(s) uploaded.**")
+    st.markdown(f"📥 **{len(st.session_state.uploaded_receipts)} receipt(s) uploaded:**")
+    for file in st.session_state.uploaded_receipts:
+        st.markdown(f"- {file.name}")
 
     # --- Conversational Prompt ---
     st.markdown("**I’ve scanned and structured your shopping data.**")
