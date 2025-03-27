@@ -39,13 +39,16 @@ if st.session_state.uploaded_receipts:
     st.markdown(f"📥 **{len(st.session_state.uploaded_receipts)} receipt(s) uploaded.**")
 
     # --- Conversational Prompt ---
-    st.markdown("**I’ve scanned and structured your shopping data. Do you want to upload more receipts, or are you ready to gain insights?**")
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("📎 Upload More Receipts"):
-            st.experimental_rerun()
-    with col2:
-        proceed = st.button("🔎 Analyze My Shopping Data")
+    st.markdown("**I’ve scanned and structured your shopping data.**")
+    
+    st.markdown("""
+    Would you like to upload more receipts so I can get the full picture of your household's food habits?
+    
+    You can use the upload box above to add more receipts.
+    """)
+    
+    proceed = st.button("✅ I'm Ready – Analyze My Shopping Data")
+
 
 else:
     proceed = False
