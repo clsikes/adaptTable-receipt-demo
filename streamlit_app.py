@@ -8,7 +8,6 @@ GOOGLE_VISION_API_KEY = st.secrets["google_api_key"]
 OPENAI_API_KEY = st.secrets["openai_api_key"]
 client = OpenAI(api_key=OPENAI_API_KEY) 
 
-openai.api_key = OPENAI_API_KEY
 
 # --- App Title ---
 st.title("🧾 adaptTable Receipt Analyzer")
