@@ -29,11 +29,7 @@ if uploaded_file:
     }
 
     vision_response = requests.post(vision_url, json=vision_payload)
-result = vision_response.json()
-
-# Debug output (shows raw Vision API result, even on failure)
-st.write("🧪 Vision API raw response:")
-st.json(result)
+    result = vision_response.json()
 
     try:
         if (
