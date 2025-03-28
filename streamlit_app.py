@@ -28,6 +28,8 @@ from urllib.parse import parse_qs
 
 query_params = st.query_params
 user_role = query_params.get("role", ["patient"])[0]  # default to patient
+st.markdown(f"🔍 **Current user role detected:** `{user_role}`")
+
 
 if user_role == "provider":
     password = st.text_input("Enter provider access code:", type="password")
