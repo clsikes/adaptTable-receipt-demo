@@ -186,9 +186,9 @@ if proceed:
                 st.markdown(cleaned_items_output)
 
 
-    except Exception as e:
-        st.error("There was a problem generating the shopping record.")
-        st.exception(e)
+        except Exception as e:
+            st.error("There was a problem generating the shopping record.")
+            st.exception(e)
 
     try:
         st.subheader("🩺 Household Behavior Profile")
