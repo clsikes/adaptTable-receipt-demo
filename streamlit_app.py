@@ -319,9 +319,7 @@ if proceed:
         )
         pen_portrait_output = pen_portrait_response.choices[0].message.content
         if user_role == "provider":
-            st.subheader("📜 Master Shopping Record (Full Itemized List)")
-            st.markdown(cleaned_items_output)
-        
+           
             st.markdown("⚠️ _Note: This view may differ slightly from what the patient sees due to reprocessing._")
 
 
