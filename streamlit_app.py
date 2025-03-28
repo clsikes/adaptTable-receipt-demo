@@ -133,16 +133,21 @@ if proceed:
         • Prioritize data integrity over clarity. When unsure, keep the original.
 
         Example Output:
-
+        
         Store Name: Walmart  
         Date: 03/21/2025  
-
+        
         1. GV Shpsh → Great Value Sharp Shredded Cheddar  
-        2. HEB Org Bby Sprch → [Uncertain Product Name] – Fresh Produce (likely leafy greens)  
-        3. Dawn Dish Soap 24oz  
-
+        2. GV ZPR SANDW → Great Value Zipper Sandwich Bags  
+        3. PAL ORI 828 → Palmolive Original 828ml  
+        4. TIDEHEORG107 → Tide HE Original 107oz  
+        5. CHRMNSF4 → Charmin Soft 4-pack  
+        6. BNTYSAS2 4 → Bounty Paper Towels 2-ply 4-pack  
+        7. NUTELLA 725G  
+        8. 90G POUF → 90g Bath Pouf  
+        
         Ambiguous Items:  
-        1. CHD LSR 12Z – Unclear abbreviation; not confidently identifiable  
+        1. CCSERVINGBWL – Unclear item code; not confidently identifiable
 
         Return only the structured output in this format. Do not add explanations, notes, or commentary.
 
@@ -202,7 +207,8 @@ if proceed:
         (Include 3–5 trends only)
 
         Master Shop Record:
-        {combined_text}
+        {cleaned_items_output}
+
         """
 
         pen_portrait_response = client.chat.completions.create(
