@@ -222,20 +222,40 @@ if proceed:
             structured_analysis = ""  # no background analysis for patient view
         
         # Step 2: Generate patient-facing household profile summary
+    
         pen_portrait_prompt = f"""
-        You are a warm, evidence-based pediatric RDN focused on T1D. Write a household summary using the structured food analysis below. Be empathetic, non-judgmental, and avoid speculative lifestyle inferences unless 60%+ confidence is supported by item patterns.
+        You are an experienced and empathetic Registered Dietitian Nutritionist (RDN) specializing in Diabetes management. Your goal is to analyze this household’s grocery shopping patterns based on their Master Shop Record (a scanned list of recent grocery purchases).
         
-        Format:
+        Step 1: Extract all food items from the Master Shop Record, ensuring:
+        ✅ No hallucination of extra food items (do not add or remove anything).
+        ✅ Accurate categorization of each item based on official classifications from USDA FoodData Central & Open Food Facts (do not manually assign categories before extraction).
+        
+        Step 2: Identify and analyze shopping patterns, including:
+        ✅ Recurring food categories (proteins, grains, snacks, dairy, etc.).
+        ✅ Household size & composition (if inferable).
+        ✅ Meal preparation habits (home-cooked vs. convenience).
+        ✅ Spending habits & cost-saving behaviors (bulk purchases, store brands).
+        ✅ Dietary preferences or restrictions (gluten-free, plant-based, etc.).
+        ✅ Brand preferences.
+        ✅ Lifestyle indicators (busy, active, social) – only if patterns are statistically significant (>60% confidence).
+        ✅ Unexpected patterns (e.g., cultural preferences, frequent use of specific ingredients).
+        
+        Step 3: Summarize the findings in a warm, realistic, and non-speculative narrative household profile.
+        • Ensure the full analysis is complete before submission.
+        • Avoid premature conclusions—submit only after identifying all relevant trends.
+        
+        Your output should include:
+        
         ### Narrative Household Profile:
-        (3–5 sentence summary)
+        (A 3–5 sentence descriptive overview)
         
         ### Notable Shopping Trends:
-        - Bullet 1
+        - Bullet 1 (specific, supported by item patterns)
         - Bullet 2
         - Bullet 3
         
-        Structured Food Analysis:
-        {structured_analysis if user_role == 'provider' else cleaned_items_output}
+        Master Shop Record:
+        {structured_analysis}
         """
         
         pen_portrait_response = client.chat.completions.create(
