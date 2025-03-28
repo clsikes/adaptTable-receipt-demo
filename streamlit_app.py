@@ -190,36 +190,47 @@ if proceed:
 
 
         # Step 1: Generate structured analysis (for provider view only)
-        if user_role == "provider":
-            structured_analysis_prompt = f"""
-            You are a food classification and dietary behavior expert. Based on the Master Shop Record:
+        structured_analysis_prompt = f"""
+        You are a food classification and dietary behavior expert. Your goal is to analyze this household’s grocery shopping patterns based on their Master Shop Record (a scanned list of recent grocery purchases).
         
-            1. Categorize all food items into standard groups (e.g., proteins, grains, produce, snacks).
-            2. Identify notable shopping patterns (e.g., home cooking, cost-saving, brand use).
-            3. Do not summarize or speculate.
+        Step 1: Extract all food items from the Master Shop Record, ensuring:
+        ✅ No hallucination of extra food items (do not add or remove anything).
+        ✅ Accurate categorization of each item based on official classifications from USDA FoodData Central & Open Food Facts (do not manually assign categories before extraction).
         
-            Return:
-            ### Categorized Foods:
-            (list by category)
+        Step 2: Identify and analyze shopping patterns, including:
+        ✅ Recurring food categories (proteins, grains, snacks, dairy, etc.).
+        ✅ Household size & composition (if inferable).
+        ✅ Meal preparation habits (home-cooked vs. convenience).
+        ✅ Spending habits & cost-saving behaviors (bulk purchases, store brands).
+        ✅ Dietary preferences or restrictions (gluten-free, plant-based, etc.).
+        ✅ Brand preferences.
+        ✅ Lifestyle indicators (busy, active, social) – only if patterns are statistically significant (high confidence).
+        ✅ Unexpected patterns (e.g., cultural preferences, frequent use of specific ingredients).
         
-            ### Observed Patterns:
-            - Bullet 1
-            - Bullet 2
+        Only return the following two sections in markdown format:
         
-            Master Shop Record:
-            {cleaned_items_output}
-            """
+        ### Categorized Foods:
+        (Group foods under categories like Proteins, Grains, Produce, Snacks, etc.)
         
-            structured_response = client.chat.completions.create(
-                model="gpt-4o",
-                messages=[
-                    {"role": "system", "content": "You are a precise, unbiased food data analyst. Do not speculate."},
-                    {"role": "user", "content": structured_analysis_prompt}
-                ]
-            )
-            structured_analysis = structured_response.choices[0].message.content
-        else:
-            structured_analysis = ""  # no background analysis for patient view
+        ### Observed Patterns:
+        - Bullet 1
+        - Bullet 2
+        - Bullet 3
+        
+        Master Shop Record:
+        {cleaned_items_output}
+        """
+        
+        structured_response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are a precise, unbiased food data analyst. Do not speculate. Use only the official classification systems noted."},
+                {"role": "user", "content": structured_analysis_prompt}
+            ]
+        )
+        
+        structured_analysis = structured_response.choices[0].message.content
+
         
         # Step 2: Generate patient-facing household profile summary
     
