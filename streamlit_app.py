@@ -247,13 +247,20 @@ if proceed:
         )
         pen_portrait_output = pen_portrait_response.choices[0].message.content
         if user_role == "provider":
-            st.subheader("🩺 Full Clinical Profile")
-            with st.expander("📊 Categorized Foods & Shopping Patterns", expanded=True):
-                st.markdown(structured_analysis)
-            st.markdown("#### Patient Summary View")
+            st.subheader("📜 Master Shopping Record (Full Itemized List)")
+            st.markdown(cleaned_items_output)
+        
+            st.subheader("📊 Categorized Foods & Shopping Patterns")
+            st.markdown(structured_analysis)
+        
+            st.subheader("🩺 Final Household Summary")
             st.markdown(pen_portrait_output)
+        
         else:
-            st.subheader("💡 Your Personalized Nutrition Snapshot")
+            st.subheader("📊 Your Grocery Trends & Nutrition Insights")
+            st.markdown(structured_analysis)
+        
+            st.subheader("💡 Summary of Your Shopping Habits")
             st.markdown(pen_portrait_output)
 
 
