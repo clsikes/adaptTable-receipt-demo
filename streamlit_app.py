@@ -28,12 +28,6 @@ from urllib.parse import parse_qs
 
 query_params = st.query_params
 user_role = query_params.get("role", "patient")
-
-# Clear uploaded receipts if user role changes between sessions
-if "last_user_role" in st.session_state and st.session_state.last_user_role != user_role:
-    st.session_state.uploaded_receipts = []
-st.session_state.last_user_role = user_role
-
 st.markdown(f"🔍 **Current user role detected:** `{user_role}`")
 
 
@@ -51,11 +45,8 @@ if "uploaded_receipts" not in st.session_state:
 new_receipt = st.file_uploader("Upload your grocery receipt image", type=["jpg", "jpeg", "png"])
 
 if new_receipt is not None:
-    if new_receipt.name not in [f.name for f in st.session_state.uploaded_receipts]:
-        st.session_state.uploaded_receipts.append(new_receipt)
-        st.success("Receipt uploaded!")
-    else:
-        st.info("This receipt has already been uploaded.")
+    st.session_state.uploaded_receipts.append(new_receipt)
+    st.success("Receipt uploaded!")
 
 # --- Show Receipt Count ---
 if st.session_state.uploaded_receipts:
@@ -341,35 +332,6 @@ if proceed:
         else:
             st.subheader("📊 Your Grocery Trends & Nutrition Insights")
             st.markdown(structured_analysis)
-
-                        
-            
-            # --- Parse Categories from Structured Analysis ---
-            import matplotlib.pyplot as plt
-            import re
-            from collections import Counter
-            
-            category_blocks = re.findall(r"### Categorized Foods:(.*?)### Observed Patterns:", structured_analysis, re.DOTALL)
-            
-            category_counts = Counter()
-            if category_blocks:
-                items = category_blocks[0].strip().split("\n")
-                current_category = None
-                for line in items:
-                    if not line.strip():
-                        continue
-                    if not line.startswith("-"):
-                        current_category = line.strip().rstrip(":")
-                    elif current_category:
-                        category_counts[current_category] += 1
-            
-            # --- Plot Pie Chart ---
-            if category_counts:
-                fig, ax = plt.subplots()
-                ax.pie(category_counts.values(), labels=category_counts.keys(), autopct="%1.1f%%", startangle=90)
-                ax.axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle.
-                st.pyplot(fig)
-
         
             st.subheader("💡 Summary of Your Shopping Habits")
             st.markdown(pen_portrait_output)
