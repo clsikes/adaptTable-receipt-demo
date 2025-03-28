@@ -26,7 +26,7 @@ To get started, I’ll take a look at your recent grocery receipts. This helps m
 # --- Role-Based Access (Hybrid: URL + Password) ---
 from urllib.parse import parse_qs
 
-query_params = st.experimental_get_query_params()
+query_params = st.query_params
 user_role = query_params.get("role", ["patient"])[0]  # default to patient
 
 if user_role == "provider":
