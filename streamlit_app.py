@@ -178,8 +178,11 @@ if proceed:
         )
 
         cleaned_items_output = response.choices[0].message.content
-        st.markdown("### 🧾 Master Shopping Record:")
-        st.markdown(cleaned_items_output)
+
+            if user_role == "provider":
+                st.markdown("### 🧾 Master Shopping Record:")
+                st.markdown(cleaned_items_output)
+
 
     except Exception as e:
         st.error("There was a problem generating the shopping record.")
