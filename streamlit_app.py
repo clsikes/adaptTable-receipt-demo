@@ -95,7 +95,17 @@ if proceed:
     try:
         st.subheader("Generating Master Shopping Record...")
 
-        prompt = f"""
+
+        system_prompt_receipt_parser = """
+        You are an expert receipt parser. Your role is to extract and expand grocery items from OCR-processed receipts using consistent formatting and strict rules.
+        Always:
+        - Expand confidently known abbreviations using → 
+        - Flag uncertain items under an 'Ambiguous Items' section
+        - Preserve literal wording and ordering
+        Do not guess, and do not skip expansions when confident.
+        """
+
+        user_prompt_receipt_parser = f"""
         SYSTEM PROMPT: Receipt Item Extraction & Formatting
         Task:
         Extract and format all items below from a grocery receipt processed through OCR (Optical Character Recognition) for inclusion in a master shopping record. This record will support later analysis of dietary habits, food preferences, and household size.
@@ -121,29 +131,31 @@ if proceed:
         • Correct only clear OCR typos (e.g., “Chedar” → “Cheddar”)
         • Do not interpret categories or food types — preserve the item’s literal content.
         • Prioritize data integrity over clarity. When unsure, keep the original.
-        
+
         Example Output:
-        
+
         Store Name: Walmart  
         Date: 03/21/2025  
-        
+
         1. GV Shpsh → Great Value Sharp Shredded Cheddar  
         2. HEB Org Bby Sprch → [Uncertain Product Name] – Fresh Produce (likely leafy greens)  
         3. Dawn Dish Soap 24oz  
-        
+
         Ambiguous Items:  
         1. CHD LSR 12Z – Unclear abbreviation; not confidently identifiable  
 
-        
         Return only the structured output in this format. Do not add explanations, notes, or commentary.
-        
+
         Extracted Receipt Text:
         {combined_text}
         """
 
         response = client.chat.completions.create(
             model="gpt-4o",
-            messages=[{"role": "user", "content": prompt}]
+            messages=[
+                {"role": "system", "content": system_prompt_receipt_parser},
+                {"role": "user", "content": user_prompt_receipt_parser}
+            ]
         )
 
         cleaned_items_output = response.choices[0].message.content
