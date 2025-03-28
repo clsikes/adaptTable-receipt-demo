@@ -132,7 +132,7 @@ if proceed:
         """
 
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o",
             messages=[{"role": "user", "content": prompt}]
         )
 
@@ -184,7 +184,7 @@ if proceed:
         """
 
         pen_portrait_response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o",
             messages=[{"role": "user", "content": pen_portrait_prompt}]
         )
 
