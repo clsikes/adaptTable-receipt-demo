@@ -4,9 +4,8 @@ import base64
 import requests
 
 # --- API Keys ---
-GOOGLE_VISION_API_KEY = st.secrets["AIzaSyBxRClPYVk9h8B5PLDaNAkQkoOTQ9EDebA"]
-OPENAI_API_KEY = st.secrets["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
-"]
+GOOGLE_VISION_API_KEY = st.secrets["google_api_key"]
+OPENAI_API_KEY = st.secrets["openai_api_key"]
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 # --- Styled Logo Header ---
