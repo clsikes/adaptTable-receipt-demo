@@ -232,42 +232,78 @@ if proceed:
         structured_analysis = structured_response.choices[0].message.content
 
         
-        # Step 2: Generate patient-facing household profile summary
-    
-        pen_portrait_prompt = f"""
-        You are an experienced and empathetic Registered Dietitian Nutritionist (RDN) specializing in Diabetes management. Your goal is to analyze this household’s grocery shopping patterns based on their Master Shop Record (a scanned list of recent grocery purchases).
+
+        # Step 2: Generate role-specific household profile summary
         
-        Step 1: Extract all food items from the Master Shop Record, ensuring:
-        ✅ No hallucination of extra food items (do not add or remove anything).
-        ✅ Accurate categorization of each item based on official classifications from USDA FoodData Central & Open Food Facts (do not manually assign categories before extraction).
+        if user_role == "provider":
+            pen_portrait_prompt = f"""
+        You are an analytical and evidence-based Registered Dietitian Nutritionist (RDN) working in an endocrinology clinic. You have just received a structured analysis of a household’s recent grocery purchases. It includes categorized food groups and key shopping patterns based on their Master Shopping Record.
         
-        Step 2: Identify and analyze shopping patterns, including:
-        ✅ Recurring food categories (proteins, grains, snacks, dairy, etc.).
-        ✅ Household size & composition (if inferable).
-        ✅ Meal preparation habits (home-cooked vs. convenience).
-        ✅ Spending habits & cost-saving behaviors (bulk purchases, store brands).
-        ✅ Dietary preferences or restrictions (gluten-free, plant-based, etc.).
-        ✅ Brand preferences.
-        ✅ Lifestyle indicators (busy, active, social) – only if patterns are statistically significant (>60% confidence).
-        ✅ Unexpected patterns (e.g., cultural preferences, frequent use of specific ingredients).
+        Your job is to create a clear, structured evaluation of this household's dietary habits. This is for internal use only and will inform how to tailor patient education and support — it will not be seen by the patient. Be precise and direct. No need to soften observations, but do not speculate or assign blame.
         
-        Step 3: Summarize the findings in a warm, realistic, and non-speculative narrative household profile.
-        • Ensure the full analysis is complete before submission.
-        • Avoid premature conclusions—submit only after identifying all relevant trends.
+        Instructions:
+        - Base your assessment entirely on the provided structured analysis — do not re-categorize or re-analyze the raw receipt
+        - Focus on key dietary patterns and their implications for blood glucose management
+        - Be realistic about what the data can and cannot reveal — only reference lifestyle indicators when confidently supported
+        - Avoid overgeneralizing from a few items
+        
+        Evaluation Focus:
+        - **Macronutrient Balance & Glycemic Risk**: Assess whole vs. refined carbs, fiber content, protein type and distribution, fat quality
+        - **Processed & Packaged Food Intake**: Evaluate sodium, preservatives, and reliance on convenience meals/snacks
+        - **Produce Diversity & Fiber**: Gauge non-starchy vegetable intake and variety
+        - **Household Cooking & Shopping Behavior**: Infer cooking frequency, brand loyalty, bulk purchases, and cost-saving strategies when visible
+        - **Cultural or Dietary Restrictions**: Identify only if clear and consistent
+        
+        Your output should:
+        - Clearly identify observed dietary patterns and potential risks or limitations
+        - Flag behaviors or gaps that may require education or future behavior change
+        - Remain clinical, structured, and grounded in the provided analysis
+        
+        ### Clinical Assessment Summary:
+        (A brief but focused analysis of food behaviors and clinical considerations)
+        
+        ### Key Dietary Insights:
+        - Bullet 1
+        - Bullet 2
+        - Bullet 3
+        
+        Structured Food & Pattern Analysis:
+        {structured_analysis}
+            """
+            system_message = "You are a thoughtful, analytical RDN. Base all insights strictly on evidence from the structured analysis."
+        
+        else:
+            pen_portrait_prompt = f"""
+        You are an empathetic, evidence-based Registered Dietitian Nutritionist (RDN) specializing in Diabetes. You’ve just received a structured analysis of a household’s recent grocery purchases — it includes categorized food types and key shopping patterns extracted from a master receipt.
+        
+        Your job is to write a short, grounded narrative summary that paints a picture of this household and reflects their makeup, grocery habits, and food preferences. This summary will be seen by the patient, so it should be empathetic, easy to understand, and help the user feel recognized and understood based on their shopping patterns.
+        
+        **Objective:** Build trust and engagement by showing the household that their food patterns are seen and understood, before moving into behavior change guidance.
+        
+        Instructions:
+        - Base your summary entirely on the provided analysis — do not re-categorize or re-analyze the raw receipt data
+        - If household size or age range is clearly inferable (e.g., based on kid snacks or portion sizes), you may include it — but only if the signal is strong
+        - Focus on patterns and consistencies, not isolated items
+        - Do not list detailed strengths or behaviors — a separate step will address these
+        - Avoid lifestyle guesses unless strongly supported by patterns
+        - Keep the tone supportive, observational, and specific — not vague or overly flattering
         
         Your output should include:
         
         ### Narrative Household Profile:
-        (A 3–5 sentence descriptive overview)
+        (3–5 sentence descriptive summary that captures household makeup and food patterns)
         
         ### Notable Shopping Trends:
-        - Bullet 1 (specific, supported by item patterns)
+        - Bullet 1 (specific, evidence-based)
         - Bullet 2
         - Bullet 3
         
-        Master Shop Record:
+        Categorized Food & Pattern Analysis:
         {structured_analysis}
-        """
+            """
+            system_message = "You are a thoughtful, supportive RDN. Base all insights on evidence from food patterns only."
+
+
         
         pen_portrait_response = client.chat.completions.create(
             model="gpt-4o",
