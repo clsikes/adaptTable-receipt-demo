@@ -23,6 +23,18 @@ I’m here to help you meet your family’s health goals through smarter, easier
 To get started, I’ll take a look at your recent grocery receipts. This helps me understand your household’s food habits so I can tailor guidance to your family’s needs.
 """)
 
+# --- Role-Based Access (Hybrid: URL + Password) ---
+from urllib.parse import parse_qs
+
+query_params = st.experimental_get_query_params()
+user_role = query_params.get("role", ["patient"])[0]  # default to patient
+
+if user_role == "provider":
+    password = st.text_input("Enter provider access code:", type="password")
+    if password != "rdn2024":
+        st.warning("Access denied. Please enter the correct provider code.")
+        st.stop()
+
 # --- Session State for Multi-Upload ---
 if "uploaded_receipts" not in st.session_state:
     st.session_state.uploaded_receipts = []
@@ -175,49 +187,73 @@ if proceed:
         st.subheader("🩺 Household Behavior Profile")
 
         pen_portrait_prompt = f"""
-        You are an experienced and empathetic pediatric Registered Dietitian Nutritionist (RDN) specializing in Type 1 Diabetes (T1D) management. Your goal is to analyze this household’s grocery shopping patterns based on their Master Shop Record (a scanned list of recent grocery purchases).
-
-        Step 1: Extract all food items from the Master Shop Record, ensuring:
-        ✅ No hallucination of extra food items (do not add or remove anything).
-        ✅ Accurate categorization of each item based on official classifications from USDA FoodData Central & Open Food Facts (do not manually assign categories before extraction).
-
-        Step 2: Identify and analyze shopping patterns, including:
-        ✅ Recurring food categories (proteins, grains, snacks, dairy, etc.).
-        ✅ Household size & composition (if inferable).
-        ✅ Meal preparation habits (home-cooked vs. convenience).
-        ✅ Spending habits & cost-saving behaviors (bulk purchases, store brands).
-        ✅ Dietary preferences or restrictions (gluten-free, plant-based, etc.).
-        ✅ Brand preferences.
-        ✅ Lifestyle indicators (busy, active, social) – only if patterns are statistically significant (>60% confidence).
-        ✅ Unexpected patterns (e.g., cultural preferences, frequent use of specific ingredients).
-
-        Step 3: Summarize the findings in a conversational, empathetic narrative household profile.
-        • Ensure the full analysis is complete before submission.
-        • Avoid premature conclusions—submit only after identifying all relevant trends.
-
-        Format your response as follows:
-
+        # Step 1: Generate structured analysis (for provider view only)
+        if user_role == "provider":
+            structured_analysis_prompt = f"""
+            You are a food classification and dietary behavior expert. Based on the Master Shop Record:
+        
+            1. Categorize all food items into standard groups (e.g., proteins, grains, produce, snacks).
+            2. Identify notable shopping patterns (e.g., home cooking, cost-saving, brand use).
+            3. Do not summarize or speculate.
+        
+            Return:
+            ### Categorized Foods:
+            (list by category)
+        
+            ### Observed Patterns:
+            - Bullet 1
+            - Bullet 2
+        
+            Master Shop Record:
+            {cleaned_items_output}
+            """
+        
+            structured_response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": "You are a precise, unbiased food data analyst. Do not speculate."},
+                    {"role": "user", "content": structured_analysis_prompt}
+                ]
+            )
+            structured_analysis = structured_response.choices[0].message.content
+        else:
+            structured_analysis = ""  # no background analysis for patient view
+        
+        # Step 2: Generate patient-facing household profile summary
+        pen_portrait_prompt = f"""
+        You are a warm, evidence-based pediatric RDN focused on T1D. Write a household summary using the structured food analysis below. Be empathetic, non-judgmental, and avoid speculative lifestyle inferences unless 60%+ confidence is supported by item patterns.
+        
+        Format:
         ### Narrative Household Profile:
-        [Insert 3–5 sentence summary here]
-
+        (3–5 sentence summary)
+        
         ### Notable Shopping Trends:
-        - [Bullet point trend 1]
-        - [Bullet point trend 2]
-        - [Bullet point trend 3]
-        (Include 3–5 trends only)
-
-        Master Shop Record:
-        {cleaned_items_output}
-
+        - Bullet 1
+        - Bullet 2
+        - Bullet 3
+        
+        Structured Food Analysis:
+        {structured_analysis if user_role == 'provider' else cleaned_items_output}
         """
-
+        
         pen_portrait_response = client.chat.completions.create(
             model="gpt-4o",
-            messages=[{"role": "user", "content": pen_portrait_prompt}]
+            messages=[
+                {"role": "system", "content": "You are a thoughtful, supportive RDN. Base all insights on evidence from food patterns only."},
+                {"role": "user", "content": pen_portrait_prompt}
+            ]
         )
-
         pen_portrait_output = pen_portrait_response.choices[0].message.content
-        st.markdown(pen_portrait_output)
+        if user_role == "provider":
+            st.subheader("🩺 Full Clinical Profile")
+            with st.expander("📊 Categorized Foods & Shopping Patterns", expanded=True):
+                st.markdown(structured_analysis)
+            st.markdown("#### Patient Summary View")
+            st.markdown(pen_portrait_output)
+        else:
+            st.subheader("💡 Your Personalized Nutrition Snapshot")
+            st.markdown(pen_portrait_output)
+
 
     except Exception as e:
         st.error("There was a problem generating the Household Profile.")
