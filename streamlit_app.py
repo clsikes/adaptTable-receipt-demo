@@ -186,7 +186,7 @@ if proceed:
     try:
         st.subheader("🩺 Household Behavior Profile")
 
-        pen_portrait_prompt = f"""
+
         # Step 1: Generate structured analysis (for provider view only)
         if user_role == "provider":
             structured_analysis_prompt = f"""
