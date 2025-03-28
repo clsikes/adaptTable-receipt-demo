@@ -317,6 +317,9 @@ if proceed:
             st.subheader("📜 Master Shopping Record (Full Itemized List)")
             st.markdown(cleaned_items_output)
         
+            st.markdown("⚠️ _Note: This view may differ slightly from what the patient sees due to reprocessing._")
+
+
             st.subheader("📊 Categorized Foods & Shopping Patterns")
             st.markdown(structured_analysis)
         
