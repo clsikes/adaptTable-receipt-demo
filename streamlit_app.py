@@ -106,8 +106,10 @@ if proceed:
     # --- Show All Raw Combined Text ---
     st.text_area("📝 Combined Receipt Text", combined_text, height=250)
 
-    try:
-        st.subheader("Generating Master Shopping Record...")
+    with st.spinner("⏳ Analyzing your grocery receipts... This may take 20–30 seconds."):
+        try:
+            st.subheader("Generating Master Shopping Record...")
+
 
 
         system_prompt_receipt_parser = """
