@@ -28,6 +28,12 @@ from urllib.parse import parse_qs
 
 query_params = st.query_params
 user_role = query_params.get("role", "patient")
+
+# Clear uploaded receipts if user role changes between sessions
+if "last_user_role" in st.session_state and st.session_state.last_user_role != user_role:
+    st.session_state.uploaded_receipts = []
+st.session_state.last_user_role = user_role
+
 st.markdown(f"🔍 **Current user role detected:** `{user_role}`")
 
 
@@ -45,8 +51,11 @@ if "uploaded_receipts" not in st.session_state:
 new_receipt = st.file_uploader("Upload your grocery receipt image", type=["jpg", "jpeg", "png"])
 
 if new_receipt is not None:
-    st.session_state.uploaded_receipts.append(new_receipt)
-    st.success("Receipt uploaded!")
+    if new_receipt.name not in [f.name for f in st.session_state.uploaded_receipts]:
+        st.session_state.uploaded_receipts.append(new_receipt)
+        st.success("Receipt uploaded!")
+    else:
+        st.info("This receipt has already been uploaded.")
 
 # --- Show Receipt Count ---
 if st.session_state.uploaded_receipts:
