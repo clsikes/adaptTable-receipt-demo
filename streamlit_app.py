@@ -341,16 +341,18 @@ if proceed:
         else:
             st.subheader("📊 Your Grocery Trends & Nutrition Insights")
             st.markdown(structured_analysis)
-
-                        
-            
-            # --- Parse Categories from Structured Analysis ---
+        
+            # --- Parse and Plot Pie Chart First ---
             import matplotlib.pyplot as plt
             import re
             from collections import Counter
-            
-            category_blocks = re.findall(r"### Categorized Foods:(.*?)### Observed Patterns:", structured_analysis, re.DOTALL)
-            
+    
+            category_blocks = re.findall(
+                r"### Categorized Foods:(.*?)### Observed Patterns:",
+                structured_analysis,
+                re.DOTALL
+            )
+    
             category_counts = Counter()
             if category_blocks:
                 items = category_blocks[0].strip().split("\n")
@@ -362,19 +364,40 @@ if proceed:
                         current_category = line.strip().rstrip(":")
                     elif current_category:
                         category_counts[current_category] += 1
-            
+    
+            # --- Define Custom Brand Color Palette ---
+            colors = [
+                "#252483",  # Brand Indigo
+                "#f3722c",  # Coral
+                "#43aa8b",  # Teal Green
+                "#f9c74f",  # Goldenrod
+                "#90caf9",  # Sky Blue
+                "#6c757d",  # Slate Gray
+                "#b497d6",  # Warm Lilac
+            ]
+    
             # --- Plot Pie Chart ---
             if category_counts:
+                st.markdown("#### 🥗 What You’re Buying Most")
                 fig, ax = plt.subplots()
-                ax.pie(category_counts.values(), labels=category_counts.keys(), autopct="%1.1f%%", startangle=90)
-                ax.axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle.
+                wedges, texts, autotexts = ax.pie(
+                    category_counts.values(),
+                    labels=category_counts.keys(),
+                    colors=colors[:len(category_counts)],
+                    autopct="%1.1f%%",
+                    startangle=90,
+                    textprops={"color": "black"}
+                )
+                ax.axis("equal")  # Equal aspect ratio ensures pie is circular.
                 st.pyplot(fig)
-
-        
+    
+            # --- Show Categorized Foods and Observed Patterns ---
+            st.markdown("#### 🧺 Food Categories & Shopping Patterns")
+            st.markdown(structured_analysis)
+    
+            # --- Show Narrative Summary Last ---
             st.subheader("💡 Summary of Your Shopping Habits")
             st.markdown(pen_portrait_output)
-
-
     except Exception as e:
         st.error("There was a problem generating the Household Profile.")
         st.exception(e)
