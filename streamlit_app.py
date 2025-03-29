@@ -205,32 +205,47 @@ if proceed:
 
         # Step 1: Generate structured analysis (for provider view only)
         structured_analysis_prompt = f"""
-        You are a food classification and dietary behavior expert. Your role is to accurately analyze this household’s grocery shopping patterns using the Master Shop Record provided below.
+        You are a food classification and dietary behavior expert. Your role is to accurately categorize this household’s grocery purchases based on the Master Shop Record provided below.
+
+        Use your internal knowledge of food products, brands, and ingredients from official sources like USDA FoodData Central and Open Food Facts (as of 2023) to assign each item to the most appropriate high-level food category.
         
-        Step 1: Categorize all food items by referencing official food classification systems like USDA FoodData Central and Open Food Facts.
-        ✅ Do not manually assign categories based on assumptions or pattern matching.
-        ✅ If an item is unclear or ambiguous, exclude it from category assignment and flag it for review.
-        ✅ Do not hallucinate or invent items — use the exact list provided.
+        ---
         
-        Step 2: Identify and analyze shopping patterns, including:
-        - Recurring food categories (e.g., proteins, grains, snacks, dairy, produce).
-        - Household size & composition (if confidently inferable).
-        - Cooking habits (e.g., frequent home-cooking vs. convenience foods).
-        - Budget behaviors (bulk buys, store brands, coupons).
-        - Dietary restrictions (gluten-free, dairy-free, plant-based) or cultural patterns.
-        - Any lifestyle inferences ONLY if supported by strong signal (multiple consistent items, 60%+ confidence).
+        ### Step 1: Categorize All Items
+        - Assign each item to a category such as: **Proteins, Grains, Dairy, Produce, Snacks, Packaged Meals, Condiments, Beverages, Non-Food, etc.**
+        - You may use confident inference based on brand names, known food products, and abbreviations.
+        - Do not hallucinate or fabricate products — if a product cannot be confidently identified, flag it as ambiguous.
+        - When an item’s category is identifiable but its exact name is unclear, label it with a general name (e.g., “Unclear Frozen Entrée”) but still assign it to a category.
         
-        Output Format:
-        ### Categorized Foods:
-        (Organize under category headers: Proteins, Grains, Dairy, Produce, Snacks, Packaged Meals, etc.)
+        ---
         
-        ### Observed Patterns:
+        ### Step 2: Identify and Analyze Shopping Patterns, Including:
+        - Recurring food categories (e.g., proteins, grains, snacks, dairy, produce)
+        - Household size & composition (if confidently inferable)
+        - Cooking habits (e.g., frequent home-cooking vs. convenience foods)
+        - Budget behaviors (bulk buys, store brands, coupons)
+        - Dietary restrictions (gluten-free, dairy-free, plant-based) or cultural patterns
+        - Any lifestyle inferences ONLY if supported by strong signal (multiple consistent items, high confidence levels)
+        
+        ---
+        
+        ### Output Format:
+        #### Categorized Foods:
+        (Organize items under clear category headers)
+        
+        #### Ambiguous or Unclassifiable Items:
+        - Item 1 – Reason (e.g., unclear product code, non-food, brand unknown)
+        
+        #### Observed Patterns:
         - Bullet 1
         - Bullet 2
         - Bullet 3
         
+        ---
+        
         Master Shop Record:
         {cleaned_items_output}
+
         """
 
         structured_response = client.chat.completions.create(
