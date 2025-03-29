@@ -328,13 +328,18 @@ if proceed:
         if user_role == "provider":
            
             st.markdown("⚠️ _Note: This view may differ slightly from what the patient sees due to reprocessing._")
-
-
-            st.subheader("📊 Categorized Foods & Shopping Patterns")
-            st.markdown(structured_analysis)
+        
+            # Extract only the Categorized Foods section (hide first Observed Patterns)
+            import re
+            categorized_only_match = re.search(r"### Categorized Foods:(.*?)### Observed Patterns:", structured_analysis, re.DOTALL)
+            categorized_only = categorized_only_match.group(1).strip() if categorized_only_match else "No categorized food data found."
+        
+            st.subheader("📊 Categorized Foods")
+            st.markdown(categorized_only)
         
             st.subheader("🩺 Final Household Summary")
             st.markdown(pen_portrait_output)
+
         
         else:
             st.subheader("📊 Your Grocery Trends & Nutrition Insights")
