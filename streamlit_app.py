@@ -198,32 +198,28 @@ if proceed:
             # --- Step 1.5: Normalize Extracted Items for Categorization ---
             normalization_prompt = f"""
             You are a grocery receipt normalization expert with deep knowledge of food product names, categories, and abbreviations.
-    
-            Your job is to take the extracted receipt item list below and expand abbreviations, correct minor OCR issues, and assign a high-level food category for each item.
-    
-            Use your internal knowledge of USDA FoodData Central and Open Food Facts (as of 2023). Only make expansions or category assignments when confident. If uncertain, flag the item as ambiguous.
-    
+            
+            Your job is to clean and normalize the extracted receipt item list below by expanding abbreviations, correcting minor OCR issues, and assigning high-level food categories.
+            
+            Please return your output in a **markdown table** with the following columns:
+            | Raw Item | Normalized Name | Category Tags | Notes |
+            
+            Use your internal knowledge of USDA FoodData Central and Open Food Facts (as of 2023). Only make expansions or category assignments when confident.
+            
             ---
-    
-            ### Output Format:
-            Return a list formatted like this:
-            1. FLKY BISCUIT → Flaky Biscuits [Grains, Highly Processed]
-            2. CHKN WINGS → Chicken Wings [Protein, Processed]
-            3. SMK HAM → Smoked Ham [Protein, Deli Meat]
-            4. GV NS PJ BZ – Ambiguous (unclear abbreviation)
-            5. NUTELLA 725G → Nutella 725g [Spreads, Highly Processed]
-    
-            ---
-    
+            
             ### Guidelines:
             - Expand confidently known product names or abbreviations
             - Correct minor OCR errors (e.g., 'Chedar' → 'Cheddar', '1 M1LK' → '1 MILK')
-            - Add 1–2 category tags in brackets (e.g., [Dairy, Store Brand], [Protein, Fresh])
-            - Flag any item you cannot confidently normalize or categorize
-    
+            - Add 1–2 high-level categories (e.g., [Protein], [Grains, Processed], [Snacks, Store Brand])
+            - If unsure about an item, leave "Normalized Name" and "Category Tags" blank, and explain in "Notes"
+            
+            ---
+            
             Extracted Item List:
             {cleaned_items_output}
             """
+
     
             normalization_response = client.chat.completions.create(
                 model="gpt-4o",
