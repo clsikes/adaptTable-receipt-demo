@@ -120,7 +120,7 @@ if proceed:
             st.subheader("Generating Master Shopping Record...")
 
 
-
+# --- Step 1: Extract and Format Receipt Items ---
             system_prompt_receipt_parser = """
             You are an expert receipt parser. Your role is to extract and expand grocery items from OCR-processed receipts using consistent formatting and strict rules.
             Always:
@@ -194,6 +194,35 @@ if proceed:
                 st.markdown("### 🧾 Master Shopping Record:")
                 st.markdown(cleaned_items_output)
 
+        
+        # --- Step 1.5: Normalize Extracted Items for Categorization ---
+        You are a grocery receipt normalization expert with deep knowledge of food product names, categories, and abbreviations.
+
+        Your job is to take the extracted receipt item list below and expand abbreviations, correct minor OCR issues, and assign a high-level food category for each item.
+        
+        Use your internal knowledge of USDA FoodData Central and Open Food Facts (as of 2023). Only make expansions or category assignments when confident. If uncertain, flag the item as ambiguous.
+        
+        ---
+        
+        ### Output Format:
+        Return a list formatted like this:
+        1. FLKY BISCUIT → Flaky Biscuits [Grains, Highly Processed]
+        2. CHKN WINGS → Chicken Wings [Protein, Processed]
+        3. SMK HAM → Smoked Ham [Protein, Deli Meat]
+        4. GV NS PJ BZ – Ambiguous (unclear abbreviation)
+        5. NUTELLA 725G → Nutella 725g [Spreads, Highly Processed]
+        
+        ---
+        
+        ### Guidelines:
+        - Expand confidently known product names or abbreviations
+        - Correct minor OCR errors (e.g., 'Chedar' → 'Cheddar', '1 M1LK' → '1 MILK')
+        - Add 1–2 category tags in brackets (e.g., `[Dairy, Store Brand]`), [Protein, Fresh])
+        - Flag any item you cannot confidently normalize or categorize
+        
+        Extracted Item List:
+        {cleaned_items_output}
+        
 
         except Exception as e:
             st.error("There was a problem generating the shopping record.")
@@ -201,9 +230,11 @@ if proceed:
 
     try:
         st.subheader("🩺 Household Behavior Profile")
+        
+      
+       
 
-
-        # Step 1: Generate structured analysis (for provider view only)
+        # --- Step 2: Categorize Items and Detect Patterns ---
         structured_analysis_prompt = f"""
         You are a food classification and dietary behavior expert. Your role is to accurately categorize this household’s grocery purchases based on the Master Shop Record provided below.
 
@@ -260,7 +291,7 @@ if proceed:
 
         
 
-        # Step 2: Generate role-specific household profile summary
+        # --- Step 3: Generate Role-Based RDN Summary ---
         
         if user_role == "provider":
             pen_portrait_prompt = f"""
