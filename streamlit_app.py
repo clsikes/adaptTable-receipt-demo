@@ -205,26 +205,24 @@ if proceed:
 
         # Step 1: Generate structured analysis (for provider view only)
         structured_analysis_prompt = f"""
-        You are a food classification and dietary behavior expert. Your goal is to analyze this household’s grocery shopping patterns based on their Master Shop Record (a scanned list of recent grocery purchases).
+        You are a food classification and dietary behavior expert. Your role is to accurately analyze this household’s grocery shopping patterns using the Master Shop Record provided below.
         
-        Step 1: Extract all food items from the Master Shop Record, ensuring:
-        ✅ No hallucination of extra food items (do not add or remove anything).
-        ✅ Accurate categorization of each item based on official classifications from USDA FoodData Central & Open Food Facts (do not manually assign categories before extraction).
+        Step 1: Categorize all food items by referencing official food classification systems like USDA FoodData Central and Open Food Facts.
+        ✅ Do not manually assign categories based on assumptions or pattern matching.
+        ✅ If an item is unclear or ambiguous, exclude it from category assignment and flag it for review.
+        ✅ Do not hallucinate or invent items — use the exact list provided.
         
         Step 2: Identify and analyze shopping patterns, including:
-        ✅ Recurring food categories (proteins, grains, snacks, dairy, etc.).
-        ✅ Household size & composition (if inferable).
-        ✅ Meal preparation habits (home-cooked vs. convenience).
-        ✅ Spending habits & cost-saving behaviors (bulk purchases, store brands).
-        ✅ Dietary preferences or restrictions (gluten-free, plant-based, etc.).
-        ✅ Brand preferences.
-        ✅ Lifestyle indicators (busy, active, social) – only if patterns are statistically significant (high confidence).
-        ✅ Unexpected patterns (e.g., cultural preferences, frequent use of specific ingredients).
+        - Recurring food categories (e.g., proteins, grains, snacks, dairy, produce).
+        - Household size & composition (if confidently inferable).
+        - Cooking habits (e.g., frequent home-cooking vs. convenience foods).
+        - Budget behaviors (bulk buys, store brands, coupons).
+        - Dietary restrictions (gluten-free, dairy-free, plant-based) or cultural patterns.
+        - Any lifestyle inferences ONLY if supported by strong signal (multiple consistent items, 60%+ confidence).
         
-        Only return the following two sections in markdown format:
-        
+        Output Format:
         ### Categorized Foods:
-        (Group foods under categories like Proteins, Grains, Produce, Snacks, etc.)
+        (Organize under category headers: Proteins, Grains, Dairy, Produce, Snacks, Packaged Meals, etc.)
         
         ### Observed Patterns:
         - Bullet 1
@@ -234,7 +232,7 @@ if proceed:
         Master Shop Record:
         {cleaned_items_output}
         """
-        
+
         structured_response = client.chat.completions.create(
             model="gpt-4o",
             messages=[
