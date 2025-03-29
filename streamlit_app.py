@@ -158,20 +158,8 @@ if proceed:
 
             cleaned_items_output = response.choices[0].message.content
 
-            if user_role == "provider":
-                st.markdown("### 🧾 Master Shopping Record (Raw + Expanded):")
-                st.markdown(cleaned_items_output)
-
-        except Exception as e:
-            st.error("There was a problem generating the shopping record.")
-            st.exception(e)
-
-
-            
-
             # --- Extract Raw Items Only (for LLM use) ---
             import re
-            
             def extract_raw_items(markdown_table):
                 rows = markdown_table.strip().split("\n")
                 raw_items = []
@@ -183,15 +171,16 @@ if proceed:
                             if raw and raw.lower() != "raw item":
                                 raw_items.append(raw)
                 return "\n".join(raw_items)
-            
+
             raw_items_only = extract_raw_items(cleaned_items_output)
-    
-                if user_role == "provider":
-                    st.markdown("### 🧾 Master Shopping Record:")
-                    st.markdown(cleaned_items_output)
+
+            if user_role == "provider":
+                st.markdown("### 🧾 Master Shopping Record (Raw + Expanded):")
+                st.markdown(cleaned_items_output)
 
 
-        except Exception as e:
+
+    except Exception as e:
             st.error("There was a problem generating the shopping record.")
             st.exception(e)
 
