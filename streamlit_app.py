@@ -120,33 +120,43 @@ if proceed:
             st.subheader("Generating Master Shopping Record...")
 
             system_prompt_receipt_parser = """
-            You are an expert receipt parser. Your role is to extract and expand grocery items from OCR-processed receipts using consistent formatting and strict rules.
 
-            Return the output as a markdown table with two columns:
-            | Raw Item | Expansion |
-            List every item in order. Include the raw name as-is.
-            Expand confidently known abbreviations using the Expansion column.
-            If unsure, leave Expansion blank or mark as 'Ambiguous'.
-
-            Do not consolidate duplicates or make guesses.
-            Do not remove non-food items.
-            Preserve order and literal wording in the Raw Item column.
-            """
-
-            user_prompt_receipt_parser = f"""
-            Extract and expand grocery items from the following OCR receipt text.
-            Follow the formatting rules below.
-
-            ### Format:
+            You are an expert receipt parser. Your job is to extract and expand grocery items from OCR-processed receipts using consistent formatting and strict rules.
+            
+            ✅ First, extract the **store name** and **date** from the receipt and present them at the top of the output.
+            ✅ Then, return the rest as a markdown table with two columns:
+            
             | Raw Item | Expansion |
             |----------|-----------|
-            | GV SHPSH | Great Value Sharp Shredded Cheddar |
-            | FLKY BISCUIT | Flaky Biscuits |
-            | CCSERVINGBWL | Ambiguous |
+            
+            📌 Guidelines:
+            - Expand confidently known abbreviations using the Expansion column.
+            - If unsure, leave the Expansion blank or mark as 'Ambiguous'.
+            - Do not consolidate duplicates or make guesses.
+            - Do not remove non-food items.
+            - Preserve order and literal wording in the Raw Item column.
+            - Do not include any explanations or commentary outside the structured output.
+            """
+
+
+            user_prompt_receipt_parser = f"""
+          
+            Extract the store name, date, and all receipt items from the text below. 
+            Follow the format:
+            
+            Store Name: [Store Name]  
+            Date: [Date]  
+            
+            | Raw Item | Expansion |
+            |----------|-----------|
+            | ITEM A   | Expansion |
+            | ITEM B   | Ambiguous |
             
             Extracted Receipt Text:
             {combined_text}
             """
+
+    
 
             response = client.chat.completions.create(
                 model="gpt-4o",
