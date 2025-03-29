@@ -212,7 +212,7 @@ if proceed:
             - Expand confidently known product names or abbreviations
             - Correct minor OCR errors (e.g., 'Chedar' → 'Cheddar', '1 M1LK' → '1 MILK')
             - Add 1–2 high-level categories (e.g., [Protein], [Grains, Processed], [Snacks, Store Brand])
-            - If unsure about an item, leave "Normalized Name" and "Category Tags" blank, and explain in "Notes"
+            - If unsure about an item, leave 'Normalized Name' and 'Category Tags' blank, and explain in 'Notes'
             
             ---
             
@@ -282,7 +282,7 @@ if proceed:
         ---
         
         Master Shop Record:
-        {cleaned_items_output}
+        {normalized_items_output}  
 
         """
 
