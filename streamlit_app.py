@@ -8,6 +8,40 @@ GOOGLE_VISION_API_KEY = st.secrets["google_api_key"]
 OPENAI_API_KEY = st.secrets["openai_api_key"]
 client = OpenAI(api_key=OPENAI_API_KEY)
 
+# --- Helper Function: Extract all store blocks from markdown table ---
+def extract_all_store_blocks(parsed_text):
+    blocks = []
+    current_store = None
+    current_items = []
+
+    for line in parsed_text.strip().splitlines():
+        line = line.strip()
+        if line.lower().startswith("store name:"):
+            if current_store and current_items:
+                blocks.append((current_store, "\n".join(current_items)))
+                current_items = []
+            current_store = line.split(":", 1)[-1].strip()
+
+        elif line.startswith("| Raw Item"):
+            continue  # skip header
+        elif line.startswith("|") and current_store:
+            parts = line.split("|")
+            if len(parts) > 2:
+                raw = parts[1].strip()
+                if raw.lower() != "raw item":
+                    current_items.append(raw)
+        elif not line and current_store and current_items:
+            blocks.append((current_store, "\n".join(current_items)))
+            current_store = None
+            current_items = []
+
+    # Catch final block
+    if current_store and current_items:
+        blocks.append((current_store, "\n".join(current_items)))
+
+    return blocks
+
+
 # --- Styled Logo Header ---
 st.markdown(
     "<h1 style='font-family: Poppins, sans-serif; color: rgb(37,36,131); font-size: 2.5rem;'>AdaptTable</h1>",
@@ -169,36 +203,12 @@ if proceed:
             cleaned_items_output = response.choices[0].message.content
 
             # --- Extract Raw Items Only (for LLM use) ---
-            import re
-
-            def extract_store_name_and_raw_items(parsed_text):
-                lines = parsed_text.strip().splitlines()
-                store_name = ""
-                raw_items = []
-                found_table = False
-            
-                for line in lines:
-                    if line.lower().startswith("store name:"):
-                        store_name = line.split(":", 1)[-1].strip()
-                    elif line.strip().startswith("|") and "Raw Item" in line:
-                        found_table = True
-                        continue
-                    elif found_table and line.strip().startswith("|"):
-                        parts = line.split("|")
-                        if len(parts) > 2:
-                            raw = parts[1].strip()
-                            if raw and raw.lower() != "raw item":
-                                raw_items.append(raw)
-                    elif found_table and not line.strip():
-                        break  # stop when table ends
-            
-                return store_name, "\n".join(raw_items)
-
-            store_name, raw_items_only = extract_store_name_and_raw_items(cleaned_items_output)
-
-
-            raw_items_only = extract_raw_items(cleaned_items_output)
-
+            store_blocks = extract_all_store_blocks(cleaned_items_output)
+    
+            combined_raw_items = "\n\n".join(
+                f"**Store: {store}**\n{items}" for store, items in store_blocks
+            )
+    
             if user_role == "provider":
                 st.markdown("### 🧾 Master Shopping Record (Raw + Expanded):")
                 st.markdown(cleaned_items_output)
@@ -236,7 +246,7 @@ if proceed:
         - Bullet 3
 
         Master Shop Record:
-        {raw_items_only}
+        {combined_raw_items}
             """
             system_message = "You are a clinical RDN. Use only the Raw Item names. Base all insights strictly on evidence from the item names alone."
 
@@ -265,7 +275,7 @@ if proceed:
         - Bullet 3
 
         Master Shop Record:
-        {raw_items_only}
+        {combined_raw_items}
             """
             system_message = "You are an empathetic RDN. Base all insights only on the Raw Item names. Avoid guessing or using expanded names."
 
