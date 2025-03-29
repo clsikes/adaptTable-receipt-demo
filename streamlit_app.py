@@ -180,7 +180,7 @@ if proceed:
 
 
 
-    except Exception as e:
+        except Exception as e:
             st.error("There was a problem generating the shopping record.")
             st.exception(e)
 
