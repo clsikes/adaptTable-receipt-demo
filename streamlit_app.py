@@ -194,36 +194,47 @@ if proceed:
                 st.markdown("### 🧾 Master Shopping Record:")
                 st.markdown(cleaned_items_output)
 
+            
+            # --- Step 1.5: Normalize Extracted Items for Categorization ---
+            normalization_prompt = f"""
+            You are a grocery receipt normalization expert with deep knowledge of food product names, categories, and abbreviations.
+    
+            Your job is to take the extracted receipt item list below and expand abbreviations, correct minor OCR issues, and assign a high-level food category for each item.
+    
+            Use your internal knowledge of USDA FoodData Central and Open Food Facts (as of 2023). Only make expansions or category assignments when confident. If uncertain, flag the item as ambiguous.
+    
+            ---
+    
+            ### Output Format:
+            Return a list formatted like this:
+            1. FLKY BISCUIT → Flaky Biscuits [Grains, Highly Processed]
+            2. CHKN WINGS → Chicken Wings [Protein, Processed]
+            3. SMK HAM → Smoked Ham [Protein, Deli Meat]
+            4. GV NS PJ BZ – Ambiguous (unclear abbreviation)
+            5. NUTELLA 725G → Nutella 725g [Spreads, Highly Processed]
+    
+            ---
+    
+            ### Guidelines:
+            - Expand confidently known product names or abbreviations
+            - Correct minor OCR errors (e.g., 'Chedar' → 'Cheddar', '1 M1LK' → '1 MILK')
+            - Add 1–2 category tags in brackets (e.g., [Dairy, Store Brand], [Protein, Fresh])
+            - Flag any item you cannot confidently normalize or categorize
+    
+            Extracted Item List:
+            {cleaned_items_output}
+            """
+    
+            normalization_response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": "You are a precise and cautious food normalization assistant. Do not guess. Use your food knowledge to expand and tag items only when confident."},
+                    {"role": "user", "content": normalization_prompt}
+                ]
+            )
+    
+            normalized_items_output = normalization_response.choices[0].message.content
         
-        # --- Step 1.5: Normalize Extracted Items for Categorization ---
-        You are a grocery receipt normalization expert with deep knowledge of food product names, categories, and abbreviations.
-
-        Your job is to take the extracted receipt item list below and expand abbreviations, correct minor OCR issues, and assign a high-level food category for each item.
-        
-        Use your internal knowledge of USDA FoodData Central and Open Food Facts (as of 2023). Only make expansions or category assignments when confident. If uncertain, flag the item as ambiguous.
-        
-        ---
-        
-        ### Output Format:
-        Return a list formatted like this:
-        1. FLKY BISCUIT → Flaky Biscuits [Grains, Highly Processed]
-        2. CHKN WINGS → Chicken Wings [Protein, Processed]
-        3. SMK HAM → Smoked Ham [Protein, Deli Meat]
-        4. GV NS PJ BZ – Ambiguous (unclear abbreviation)
-        5. NUTELLA 725G → Nutella 725g [Spreads, Highly Processed]
-        
-        ---
-        
-        ### Guidelines:
-        - Expand confidently known product names or abbreviations
-        - Correct minor OCR errors (e.g., 'Chedar' → 'Cheddar', '1 M1LK' → '1 MILK')
-        - Add 1–2 category tags in brackets (e.g., `[Dairy, Store Brand]`), [Protein, Fresh])
-        - Flag any item you cannot confidently normalize or categorize
-        
-        Extracted Item List:
-        {cleaned_items_output}
-        
-
         except Exception as e:
             st.error("There was a problem generating the shopping record.")
             st.exception(e)
