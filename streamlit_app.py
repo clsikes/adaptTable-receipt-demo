@@ -2,6 +2,21 @@ import streamlit as st
 from openai import OpenAI
 import base64
 import requests
+import streamlit.components.v1 as components
+
+st.markdown("### 🧾 Your Master Shopping Record")
+
+components.html(
+    f"""
+    <div style="max-height: 300px; overflow-y: auto; padding: 10px; border: 1px solid #ccc; border-radius: 8px;">
+        <pre style="white-space: pre-wrap;">{cleaned_items_output}</pre>
+    </div>
+    """,
+    height=350,
+    scrolling=True
+)
+
+
 
 # --- API Keys ---
 GOOGLE_VISION_API_KEY = st.secrets["google_api_key"]
