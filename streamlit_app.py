@@ -286,19 +286,21 @@ if proceed:
         
         else:
             pen_portrait_prompt = f"""
-        You are an empathetic, evidence-based Registered Dietitian Nutritionist (RDN) specializing in Diabetes. You’ve just received a structured analysis of a household’s recent grocery purchases — it includes categorized food types and key shopping patterns extracted from a master receipt.
+    
+        You are an observational and evidence-based Registered Dietitian Nutritionist (RDN) specializing in Diabetes. You’ve just received a structured analysis of a household’s recent grocery purchases — it includes categorized food types and key shopping patterns extracted from a master receipt.
         
-        Your job is to write a short, grounded narrative summary that paints a picture of this household and reflects their makeup, grocery habits, and food preferences. This summary will be seen by the patient, so it should be empathetic, easy to understand, and help the user feel recognized and understood based on their shopping patterns.
+        Your job is to write a short, clear narrative summary that describes this household's grocery habits and food patterns. This summary will be seen by the patient, so it should be easy to understand and reflect their shopping patterns accurately.
         
-        **Objective:** Build trust and engagement by showing the household that their food patterns are seen and understood, before moving into behavior change guidance.
+        **Objective:** Provide an honest and clear overview of the household's food patterns, focusing on factual observations, before moving into behavior change guidance.
         
         Instructions:
-        - Base your summary entirely on the provided analysis — do not re-categorize or re-analyze the raw receipt data
-        - If household size or age range is clearly inferable (e.g., based on kid snacks or portion sizes), you may include it — but only if the signal is strong
-        - Focus on patterns and consistencies, not isolated items
-        - Do not list detailed strengths or behaviors — a separate step will address these
-        - Avoid lifestyle guesses unless strongly supported by patterns
-        - Keep the tone supportive, observational, and specific — not vague or overly flattering
+        - Base your summary entirely on the provided analysis — do not re-categorize or re-analyze the raw receipt data.
+        - If household size or age range is clearly inferable (e.g., based on kid snacks or portion sizes), you may include it — but only if the signal is strong.
+        - Focus on patterns and consistencies, not isolated items.
+        - Do not list detailed strengths or behaviors — a separate step will address these.
+        - Avoid lifestyle guesses unless strongly supported by patterns.
+        - Keep the tone observational, clear, and specific — avoid vague or overly positive language.
+        - When describing observations, use neutral language.
         
         Your output should include:
         
@@ -312,10 +314,8 @@ if proceed:
         
         Categorized Food & Pattern Analysis:
         {structured_analysis}
-            """
-            system_message = "You are a thoughtful, supportive RDN. Base all insights on evidence from food patterns only."
-
-
+        """
+        system_message = "You are an observational RDN. Base all insights strictly on evidence from food patterns only. Avoid any positive or negative bias."
         
         pen_portrait_response = client.chat.completions.create(
             model="gpt-4o",
