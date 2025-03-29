@@ -120,7 +120,7 @@ if proceed:
             st.subheader("Generating Master Shopping Record...")
 
 
-# --- Step 1: Extract and Format Receipt Items ---
+
             system_prompt_receipt_parser = """
             You are an expert receipt parser. Your role is to extract and expand grocery items from OCR-processed receipts using consistent formatting and strict rules.
             Always:
@@ -194,96 +194,43 @@ if proceed:
                 st.markdown("### 🧾 Master Shopping Record:")
                 st.markdown(cleaned_items_output)
 
-            
-            # --- Step 1.5: Normalize Extracted Items for Categorization ---
-            normalization_prompt = f"""
-            You are a grocery receipt normalization expert with deep knowledge of food product names, categories, and abbreviations.
-            
-            Your job is to clean and normalize the extracted receipt item list below by expanding abbreviations, correcting minor OCR issues, and assigning high-level food categories.
-            
-            Please return your output in a **markdown table** with the following columns:
-            | Raw Item | Normalized Name | Category Tags | Notes |
-            
-            Use your internal knowledge of USDA FoodData Central and Open Food Facts (as of 2023). Only make expansions or category assignments when confident.
-            
-            ---
-            
-            ### Guidelines:
-            - Expand confidently known product names or abbreviations
-            - Correct minor OCR errors (e.g., 'Chedar' → 'Cheddar', '1 M1LK' → '1 MILK')
-            - Add 1–2 high-level categories (e.g., [Protein], [Grains, Processed], [Snacks, Store Brand])
-            - If unsure about an item, leave 'Normalized Name' and 'Category Tags' blank, and explain in 'Notes'
-            
-            ---
-            
-            Extracted Item List:
-            {cleaned_items_output}
-            """
 
-    
-            normalization_response = client.chat.completions.create(
-                model="gpt-4o",
-                messages=[
-                    {"role": "system", "content": "You are a precise and cautious food normalization assistant. Do not guess. Use your food knowledge to expand and tag items only when confident."},
-                    {"role": "user", "content": normalization_prompt}
-                ]
-            )
-    
-            normalized_items_output = normalization_response.choices[0].message.content
-        
         except Exception as e:
             st.error("There was a problem generating the shopping record.")
             st.exception(e)
 
     try:
         st.subheader("🩺 Household Behavior Profile")
-        
-      
-       
 
-        # --- Step 2: Categorize Items and Detect Patterns ---
+
+        # Step 1: Generate structured analysis (for provider view only)
         structured_analysis_prompt = f"""
-        You are a food classification and dietary behavior expert. Your role is to accurately categorize this household’s grocery purchases based on the Master Shop Record provided below.
-
-        Use your internal knowledge of food products, brands, and ingredients from official sources like USDA FoodData Central and Open Food Facts (as of 2023) to assign each item to the most appropriate high-level food category.
+        You are a food classification and dietary behavior expert. Your role is to accurately analyze this household’s grocery shopping patterns using the Master Shop Record provided below.
         
-        ---
+        Step 1: Categorize all food items by referencing official food classification systems like USDA FoodData Central and Open Food Facts.
+        ✅ Do not manually assign categories based on assumptions or pattern matching.
+        ✅ If an item is unclear or ambiguous, exclude it from category assignment and flag it for review.
+        ✅ Do not hallucinate or invent items — use the exact list provided.
         
-        ### Step 1: Categorize All Items
-        - Assign each item to a category such as: **Proteins, Grains, Dairy, Produce, Snacks, Packaged Meals, Condiments, Beverages, Non-Food, etc.**
-        - You may use confident inference based on brand names, known food products, and abbreviations.
-        - Do not hallucinate or fabricate products — if a product cannot be confidently identified, flag it as ambiguous.
-        - When an item’s category is identifiable but its exact name is unclear, label it with a general name (e.g., “Unclear Frozen Entrée”) but still assign it to a category.
+        Step 2: Identify and analyze shopping patterns, including:
+        - Recurring food categories (e.g., proteins, grains, snacks, dairy, produce).
+        - Household size & composition (if confidently inferable).
+        - Cooking habits (e.g., frequent home-cooking vs. convenience foods).
+        - Budget behaviors (bulk buys, store brands, coupons).
+        - Dietary restrictions (gluten-free, dairy-free, plant-based) or cultural patterns.
+        - Any lifestyle inferences ONLY if supported by strong signal (multiple consistent items, 60%+ confidence).
         
-        ---
+        Output Format:
+        ### Categorized Foods:
+        (Organize under category headers: Proteins, Grains, Dairy, Produce, Snacks, Packaged Meals, etc.)
         
-        ### Step 2: Identify and Analyze Shopping Patterns, Including:
-        - Recurring food categories (e.g., proteins, grains, snacks, dairy, produce)
-        - Household size & composition (if confidently inferable)
-        - Cooking habits (e.g., frequent home-cooking vs. convenience foods)
-        - Budget behaviors (bulk buys, store brands, coupons)
-        - Dietary restrictions (gluten-free, dairy-free, plant-based) or cultural patterns
-        - Any lifestyle inferences ONLY if supported by strong signal (multiple consistent items, high confidence levels)
-        
-        ---
-        
-        ### Output Format:
-        #### Categorized Foods:
-        (Organize items under clear category headers)
-        
-        #### Ambiguous or Unclassifiable Items:
-        - Item 1 – Reason (e.g., unclear product code, non-food, brand unknown)
-        
-        #### Observed Patterns:
+        ### Observed Patterns:
         - Bullet 1
         - Bullet 2
         - Bullet 3
         
-        ---
-        
         Master Shop Record:
-        {normalized_items_output}  
-
+        {cleaned_items_output}
         """
 
         structured_response = client.chat.completions.create(
@@ -298,7 +245,7 @@ if proceed:
 
         
 
-        # --- Step 3: Generate Role-Based RDN Summary ---
+        # Step 2: Generate role-specific household profile summary
         
         if user_role == "provider":
             pen_portrait_prompt = f"""
@@ -339,21 +286,19 @@ if proceed:
         
         else:
             pen_portrait_prompt = f"""
-    
-        You are an observational and evidence-based Registered Dietitian Nutritionist (RDN) specializing in Diabetes. You’ve just received a structured analysis of a household’s recent grocery purchases — it includes categorized food types and key shopping patterns extracted from a master receipt.
+        You are an empathetic, evidence-based Registered Dietitian Nutritionist (RDN) specializing in Diabetes. You’ve just received a structured analysis of a household’s recent grocery purchases — it includes categorized food types and key shopping patterns extracted from a master receipt.
         
-        Your job is to write a short, clear narrative summary that describes this household's grocery habits and food patterns. This summary will be seen by the patient, so it should be easy to understand and reflect their shopping patterns accurately.
+        Your job is to write a short, grounded narrative summary that paints a picture of this household and reflects their makeup, grocery habits, and food preferences. This summary will be seen by the patient, so it should be empathetic, easy to understand, and help the user feel recognized and understood based on their shopping patterns.
         
-        **Objective:** Provide an honest and clear overview of the household's food patterns, focusing on factual observations, before moving into behavior change guidance.
+        **Objective:** Build trust and engagement by showing the household that their food patterns are seen and understood, before moving into behavior change guidance.
         
         Instructions:
-        - Base your summary entirely on the provided analysis — do not re-categorize or re-analyze the raw receipt data.
-        - If household size or age range is clearly inferable (e.g., based on kid snacks or portion sizes), you may include it — but only if the signal is strong.
-        - Focus on patterns and consistencies, not isolated items.
-        - Do not list detailed strengths or behaviors — a separate step will address these.
-        - Avoid lifestyle guesses unless strongly supported by patterns.
-        - Keep the tone observational, clear, and specific — avoid vague or overly positive language.
-        - When describing observations, use neutral language.
+        - Base your summary entirely on the provided analysis — do not re-categorize or re-analyze the raw receipt data
+        - If household size or age range is clearly inferable (e.g., based on kid snacks or portion sizes), you may include it — but only if the signal is strong
+        - Focus on patterns and consistencies, not isolated items
+        - Do not list detailed strengths or behaviors — a separate step will address these
+        - Avoid lifestyle guesses unless strongly supported by patterns
+        - Keep the tone supportive, observational, and specific — not vague or overly flattering
         
         Your output should include:
         
@@ -367,8 +312,10 @@ if proceed:
         
         Categorized Food & Pattern Analysis:
         {structured_analysis}
-        """
-        system_message = "You are an observational RDN. Base all insights strictly on evidence from food patterns only. Avoid any positive or negative bias."
+            """
+            system_message = "You are a thoughtful, supportive RDN. Base all insights on evidence from food patterns only."
+
+
         
         pen_portrait_response = client.chat.completions.create(
             model="gpt-4o",
