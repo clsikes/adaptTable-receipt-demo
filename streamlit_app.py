@@ -170,17 +170,32 @@ if proceed:
 
             # --- Extract Raw Items Only (for LLM use) ---
             import re
-            def extract_raw_items(markdown_table):
-                rows = markdown_table.strip().split("\n")
+
+            def extract_store_name_and_raw_items(parsed_text):
+                lines = parsed_text.strip().splitlines()
+                store_name = ""
                 raw_items = []
-                for row in rows:
-                    if row.startswith("|") and not row.startswith("| Raw Item"):
-                        parts = row.split("|")
-                        if len(parts) > 1:
+                found_table = False
+            
+                for line in lines:
+                    if line.lower().startswith("store name:"):
+                        store_name = line.split(":", 1)[-1].strip()
+                    elif line.strip().startswith("|") and "Raw Item" in line:
+                        found_table = True
+                        continue
+                    elif found_table and line.strip().startswith("|"):
+                        parts = line.split("|")
+                        if len(parts) > 2:
                             raw = parts[1].strip()
                             if raw and raw.lower() != "raw item":
                                 raw_items.append(raw)
-                return "\n".join(raw_items)
+                    elif found_table and not line.strip():
+                        break  # stop when table ends
+            
+                return store_name, "\n".join(raw_items)
+
+            store_name, raw_items_only = extract_store_name_and_raw_items(cleaned_items_output)
+
 
             raw_items_only = extract_raw_items(cleaned_items_output)
 
