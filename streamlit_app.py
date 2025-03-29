@@ -4,17 +4,6 @@ import base64
 import requests
 import streamlit.components.v1 as components
 
-st.markdown("### 🧾 Your Master Shopping Record")
-
-components.html(
-    f"""
-    <div style="max-height: 300px; overflow-y: auto; padding: 10px; border: 1px solid #ccc; border-radius: 8px;">
-        <pre style="white-space: pre-wrap;">{cleaned_items_output}</pre>
-    </div>
-    """,
-    height=350,
-    scrolling=True
-)
 
 
 
@@ -239,6 +228,18 @@ if proceed:
             )
 
             cleaned_items_output = response.choices[0].message.content
+            st.markdown("### 🧾 Your Master Shopping Record")
+
+            components.html(
+                f"""
+                <div style="max-height: 300px; overflow-y: auto; padding: 10px; border: 1px solid #ccc; border-radius: 8px;">
+                    <pre style="white-space: pre-wrap;">{cleaned_items_output}</pre>
+                </div>
+                """,
+                height=350,
+                scrolling=True
+            )
+            
 
             # --- Extract Raw Items Only (for LLM use) ---
             store_blocks = extract_all_store_blocks(cleaned_items_output)
