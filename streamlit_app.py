@@ -167,65 +167,8 @@ if proceed:
             st.exception(e)
 
 
-            user_prompt_receipt_parser = f"""
-            SYSTEM PROMPT: Receipt Item Extraction & Formatting
-            Task:
-            Extract and format all items below from a grocery receipt processed through OCR (Optical Character Recognition) for inclusion in a master shopping record. This record will support later analysis of dietary habits, food preferences, and household size.
-            Instructions:
-            Data Review:
-            • Review all extracted receipt content carefully.
-            • Do not remove any items, including non-food or miscellaneous products.
-            • Do not infer, hallucinate, or fabricate missing or unclear items.
-            • Do not consolidate duplicates — list each item exactly as it appears and in the order it was found.
-            Output Formatting:
-            • Store Name: As printed on the receipt
-            • Date: As printed on the receipt
-            • Items:
-            o Present as a numbered list, maintaining original order
-            o For each item, preserve original wording.
-            o Expand confidently known abbreviations or recognizable product names using → formatting, even if the original is abbreviated.
-            o Always use → when expanding or correcting an item name.
-            Abbreviation Expansion Rules:
-            • Expand abbreviations or recognizable names only if you are highly confident of the full name (e.g., “GV Shpsh” → “Great Value Sharp Shredded Cheddar”), and always use → to show the expansion.
-            • If you are not sure, leave the original abbreviation untouched and move the item to a clearly labeled “Ambiguous Items” section at the bottom, with a short note explaining why it wasn’t expanded.
-            • If the exact item name is uncertain but the food category is confidently identifiable (e.g., fresh produce, dairy, snack foods), classify the item with a high-level category tag (e.g., “[Uncertain Product Name] – Fresh Produce”) instead of marking it ambiguous. Use this only when category assignment is useful for downstream dietary analysis and expansion would otherwise be speculative.
-            OCR Correction Guidelines:
-            • Correct only clear OCR typos (e.g., “Chedar” → “Cheddar”)
-            • Do not interpret categories or food types — preserve the item’s literal content.
-            • Prioritize data integrity over clarity. When unsure, keep the original.
-    
-            Example Output:
             
-            Store Name: Walmart  
-            Date: 03/21/2025  
-            
-            1. GV Shpsh → Great Value Sharp Shredded Cheddar  
-            2. GV ZPR SANDW → Great Value Zipper Sandwich Bags  
-            3. PAL ORI 828 → Palmolive Original 828ml  
-            4. TIDEHEORG107 → Tide HE Original 107oz  
-            5. CHRMNSF4 → Charmin Soft 4-pack  
-            6. BNTYSAS2 4 → Bounty Paper Towels 2-ply 4-pack  
-            7. NUTELLA 725G  
-            8. 90G POUF → 90g Bath Pouf  
-            
-            Ambiguous Items:  
-            1. CCSERVINGBWL – Unclear item code; not confidently identifiable
-    
-            Return only the structured output in this format. Do not add explanations, notes, or commentary.
-    
-            Extracted Receipt Text:
-            {combined_text}
-            """
-    
-            response = client.chat.completions.create(
-                model="gpt-4o",
-                messages=[
-                    {"role": "system", "content": system_prompt_receipt_parser},
-                    {"role": "user", "content": user_prompt_receipt_parser}
-                ]
-            )
-    
-            cleaned_items_output = response.choices[0].message.content
+
             # --- Extract Raw Items Only (for LLM use) ---
             import re
             
