@@ -119,17 +119,54 @@ if proceed:
         try:
             st.subheader("Generating Master Shopping Record...")
 
-
-
             system_prompt_receipt_parser = """
             You are an expert receipt parser. Your role is to extract and expand grocery items from OCR-processed receipts using consistent formatting and strict rules.
-            Always:
-            - Expand confidently known abbreviations using → 
-            - Flag uncertain items under an 'Ambiguous Items' section
-            - Preserve literal wording and ordering
-            Do not guess, and do not skip expansions when confident.
+
+            Return the output as a markdown table with two columns:
+            | Raw Item | Expansion |
+            List every item in order. Include the raw name as-is.
+            Expand confidently known abbreviations using the Expansion column.
+            If unsure, leave Expansion blank or mark as 'Ambiguous'.
+
+            Do not consolidate duplicates or make guesses.
+            Do not remove non-food items.
+            Preserve order and literal wording in the Raw Item column.
             """
-    
+
+            user_prompt_receipt_parser = f"""
+            Extract and expand grocery items from the following OCR receipt text.
+            Follow the formatting rules below.
+
+            ### Format:
+            | Raw Item | Expansion |
+            |----------|-----------|
+            | GV SHPSH | Great Value Sharp Shredded Cheddar |
+            | FLKY BISCUIT | Flaky Biscuits |
+            | CCSERVINGBWL | Ambiguous |
+            
+            Extracted Receipt Text:
+            {combined_text}
+            """
+
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": system_prompt_receipt_parser},
+                    {"role": "user", "content": user_prompt_receipt_parser}
+                ]
+            )
+
+            cleaned_items_output = response.choices[0].message.content
+
+            if user_role == "provider":
+                st.markdown("### 🧾 Master Shopping Record (Raw + Expanded):")
+                st.markdown(cleaned_items_output)
+
+        except Exception as e:
+            st.error("There was a problem generating the shopping record.")
+            st.exception(e)
+
+
             user_prompt_receipt_parser = f"""
             SYSTEM PROMPT: Receipt Item Extraction & Formatting
             Task:
@@ -189,10 +226,26 @@ if proceed:
             )
     
             cleaned_items_output = response.choices[0].message.content
+            # --- Extract Raw Items Only (for LLM use) ---
+            import re
+            
+            def extract_raw_items(markdown_table):
+                rows = markdown_table.strip().split("\n")
+                raw_items = []
+                for row in rows:
+                    if row.startswith("|") and not row.startswith("| Raw Item"):
+                        parts = row.split("|")
+                        if len(parts) > 1:
+                            raw = parts[1].strip()
+                            if raw and raw.lower() != "raw item":
+                                raw_items.append(raw)
+                return "\n".join(raw_items)
+            
+            raw_items_only = extract_raw_items(cleaned_items_output)
     
-            if user_role == "provider":
-                st.markdown("### 🧾 Master Shopping Record:")
-                st.markdown(cleaned_items_output)
+                if user_role == "provider":
+                    st.markdown("### 🧾 Master Shopping Record:")
+                    st.markdown(cleaned_items_output)
 
 
         except Exception as e:
@@ -202,151 +255,77 @@ if proceed:
     try:
         st.subheader("🩺 Household Behavior Profile")
 
-
-        # Step 1: Generate structured analysis (for provider view only)
-        structured_analysis_prompt = f"""
-        You are a food classification and dietary behavior expert. Your role is to accurately analyze this household’s grocery shopping patterns using the Master Shop Record provided below.
-        
-        Step 1: Categorize all food items by referencing official food classification systems like USDA FoodData Central and Open Food Facts.
-        ✅ Do not manually assign categories based on assumptions or pattern matching.
-        ✅ If an item is unclear or ambiguous, exclude it from category assignment and flag it for review.
-        ✅ Do not hallucinate or invent items — use the exact list provided.
-        
-        Step 2: Identify and analyze shopping patterns, including:
-        - Recurring food categories (e.g., proteins, grains, snacks, dairy, produce).
-        - Household size & composition (if confidently inferable).
-        - Cooking habits (e.g., frequent home-cooking vs. convenience foods).
-        - Budget behaviors (bulk buys, store brands, coupons).
-        - Dietary restrictions (gluten-free, dairy-free, plant-based) or cultural patterns.
-        - Any lifestyle inferences ONLY if supported by strong signal (multiple consistent items, 60%+ confidence).
-        
-        Output Format:
-        ### Categorized Foods:
-        (Organize under category headers: Proteins, Grains, Dairy, Produce, Snacks, Packaged Meals, etc.)
-        
-        ### Observed Patterns:
-        - Bullet 1
-        - Bullet 2
-        - Bullet 3
-        
-        Master Shop Record:
-        {cleaned_items_output}
-        """
-
-        structured_response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "You are a precise, unbiased food data analyst. Do not speculate. Use only the official classification systems noted."},
-                {"role": "user", "content": structured_analysis_prompt}
-            ]
-        )
-        
-        structured_analysis = structured_response.choices[0].message.content
-
-        
-
-        # Step 2: Generate role-specific household profile summary
-        
+        # --- Step 3: Generate Role-Based RDN Summary ---
         if user_role == "provider":
             pen_portrait_prompt = f"""
-        You are an analytical and evidence-based Registered Dietitian Nutritionist (RDN) working in an endocrinology clinic. You have just received a structured analysis of a household’s recent grocery purchases. It includes categorized food groups and key shopping patterns based on their Master Shopping Record.
-        
-        Your job is to create a clear, structured evaluation of this household's dietary habits. This is for internal use only and will inform how to tailor patient education and support — it will not be seen by the patient. Be precise and direct. No need to soften observations, but do not speculate or assign blame.
-        
+        You are an analytical and evidence-based Registered Dietitian Nutritionist (RDN) working in an endocrinology clinic. You have just received a Master Shop Record containing a list of raw grocery receipt items, with optional expanded names.
+
+        Your job is to create a clear, structured evaluation of this household's dietary habits. This is for internal use only and will inform how to tailor patient education and support — it will not be seen by the patient. Be precise and direct. Do not speculate or assign blame.
+
         Instructions:
-        - Base your assessment entirely on the provided structured analysis — do not re-categorize or re-analyze the raw receipt
-        - Focus on key dietary patterns and their implications for blood glucose management
-        - Be realistic about what the data can and cannot reveal — only reference lifestyle indicators when confidently supported
-        - Avoid overgeneralizing from a few items
-        
-        Evaluation Focus:
-        - **Macronutrient Balance & Glycemic Risk**: Assess whole vs. refined carbs, fiber content, protein type and distribution, fat quality
-        - **Processed & Packaged Food Intake**: Evaluate sodium, preservatives, and reliance on convenience meals/snacks
-        - **Produce Diversity & Fiber**: Gauge non-starchy vegetable intake and variety
-        - **Household Cooking & Shopping Behavior**: Infer cooking frequency, brand loyalty, bulk purchases, and cost-saving strategies when visible
-        - **Cultural or Dietary Restrictions**: Identify only if clear and consistent
-        
-        Your output should:
-        - Clearly identify observed dietary patterns and potential risks or limitations
-        - Flag behaviors or gaps that may require education or future behavior change
-        - Remain clinical, structured, and grounded in the provided analysis
-        
+        - Base your assessment ONLY on the Raw Item names in the Master Shop Record. Ignore the expansion column.
+        - Focus on dietary patterns, macronutrient quality, and clinical implications for diabetes or glycemic control.
+        - Do not categorize items or infer food groups — instead, infer patterns based on known food items.
+        - Avoid overgeneralizing from isolated purchases.
+
+        Your output should include:
+
         ### Clinical Assessment Summary:
-        (A brief but focused analysis of food behaviors and clinical considerations)
-        
+        (A brief, direct analysis of food behaviors and clinical considerations)
+
         ### Key Dietary Insights:
         - Bullet 1
         - Bullet 2
         - Bullet 3
-        
-        Structured Food & Pattern Analysis:
-        {structured_analysis}
+
+        Master Shop Record:
+        {raw_items_only}
             """
-            system_message = "You are a thoughtful, analytical RDN. Base all insights strictly on evidence from the structured analysis."
-        
+            system_message = "You are a clinical RDN. Use only the Raw Item names. Base all insights strictly on evidence from the item names alone."
+
         else:
             pen_portrait_prompt = f"""
-        You are an empathetic, evidence-based Registered Dietitian Nutritionist (RDN) specializing in Diabetes. You’ve just received a structured analysis of a household’s recent grocery purchases — it includes categorized food types and key shopping patterns extracted from a master receipt.
-        
-        Your job is to write a short, grounded narrative summary that paints a picture of this household and reflects their makeup, grocery habits, and food preferences. This summary will be seen by the patient, so it should be empathetic, easy to understand, and help the user feel recognized and understood based on their shopping patterns.
-        
-        **Objective:** Build trust and engagement by showing the household that their food patterns are seen and understood, before moving into behavior change guidance.
-        
+        You are an empathetic, evidence-based Registered Dietitian Nutritionist (RDN) specializing in Diabetes. You’ve just received a Master Shop Record of grocery items — it includes a column of raw item names and optional expanded names.
+
+        Your job is to write a short, clear narrative summary that describes this household's grocery habits and food patterns. This summary will be seen by the patient, so it should be easy to understand and reflect their shopping patterns accurately.
+
+        Objective: Build trust and show that the user's food choices are understood, before providing any behavior change guidance.
+
         Instructions:
-        - Base your summary entirely on the provided analysis — do not re-categorize or re-analyze the raw receipt data
-        - If household size or age range is clearly inferable (e.g., based on kid snacks or portion sizes), you may include it — but only if the signal is strong
-        - Focus on patterns and consistencies, not isolated items
-        - Do not list detailed strengths or behaviors — a separate step will address these
-        - Avoid lifestyle guesses unless strongly supported by patterns
-        - Keep the tone supportive, observational, and specific — not vague or overly flattering
-        
-        Your output should include:
-        
+        - Base your summary entirely on the Raw Item names in the Master Shop Record. Ignore the expansion column.
+        - Focus on consistent patterns, not isolated items.
+        - Avoid making dietary category guesses unless strongly supported.
+        - Keep the tone clear, observational, and specific — not vague or overly flattering.
+
+        Output should include:
+
         ### Narrative Household Profile:
-        (3–5 sentence descriptive summary that captures household makeup and food patterns)
-        
+        (3–5 sentence descriptive summary that reflects the household and food patterns)
+
         ### Notable Shopping Trends:
-        - Bullet 1 (specific, evidence-based)
+        - Bullet 1
         - Bullet 2
         - Bullet 3
-        
-        Categorized Food & Pattern Analysis:
-        {structured_analysis}
+
+        Master Shop Record:
+        {raw_items_only}
             """
-            system_message = "You are a thoughtful, supportive RDN. Base all insights on evidence from food patterns only."
+            system_message = "You are an empathetic RDN. Base all insights only on the Raw Item names. Avoid guessing or using expanded names."
 
-
-        
         pen_portrait_response = client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "system", "content": "You are a thoughtful, supportive RDN. Base all insights on evidence from food patterns only."},
+                {"role": "system", "content": system_message},
                 {"role": "user", "content": pen_portrait_prompt}
             ]
         )
-        pen_portrait_output = pen_portrait_response.choices[0].message.content
-        if user_role == "provider":
-           
-            st.markdown("⚠️ _Note: This view may differ slightly from what the patient sees due to reprocessing._")
-        
-            # Extract only the Categorized Foods section (hide first Observed Patterns)
-            import re
-            categorized_only_match = re.search(r"### Categorized Foods:(.*?)### Observed Patterns:", structured_analysis, re.DOTALL)
-            categorized_only = categorized_only_match.group(1).strip() if categorized_only_match else "No categorized food data found."
-        
-            st.subheader("📊 Categorized Foods")
-            st.markdown(categorized_only)
-        
-            st.subheader("🩺 Final Household Summary")
-            st.markdown(pen_portrait_output)
 
-        
-        else:
-            st.subheader("📊 Your Grocery Trends & Nutrition Insights")
-            st.markdown(structured_analysis)
-        
-            st.subheader("💡 Summary of Your Shopping Habits")
-            st.markdown(pen_portrait_output)
+        pen_portrait_output = pen_portrait_response.choices[0].message.content
+
+        # Final Output
+        st.subheader("💡 Summary of Your Shopping Habits" if user_role == "patient" else "🩺 Final Household Summary")
+        st.markdown(pen_portrait_output)
+
 
 
     except Exception as e:
