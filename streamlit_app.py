@@ -325,12 +325,7 @@ if proceed:
         pen_portrait_output = pen_portrait_response.choices[0].message.content
 
               # Final Output
-        st.markdown("### 🧾 Your Master Shopping Record")
-        st.markdown(
-            f"<div style='max-height: 300px; overflow-y: auto; padding: 10px; border: 1px solid #ccc; border-radius: 8px;'>{cleaned_items_output}</div>",
-            unsafe_allow_html=True
-        )
-
+       
   
         st.subheader("💡 Summary of Your Shopping Habits" if user_role == "patient" else "🩺 Final Household Summary")
         st.markdown(pen_portrait_output)
