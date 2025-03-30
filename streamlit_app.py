@@ -260,64 +260,64 @@ if proceed:
         # --- Step 3: Generate Role-Based RDN Summary ---
   
         if user_role == "provider":
-        pen_portrait_prompt = f"""
-        You are an analytical and evidence-based Registered Dietitian Nutritionist (RDN) working in an endocrinology clinic. You have just received a Master Shop Record containing a list of raw grocery receipt items, with optional expanded names.
-    
-        Your job is to create a clear, structured evaluation of this household's dietary habits. This is for internal use only and will inform how to tailor patient education and support — it will not be seen by the patient. Be precise and direct. Do not speculate or assign blame.
-    
-        Instructions:
-        - Use the Raw Item names as your primary reference.
-        - You may reference the Expansion column **only when it improves clarity or supports stronger dietary insight**.
-        - Avoid using the Expansion if the item is marked Ambiguous.
-        - Focus on dietary patterns, macronutrient quality, and clinical implications for diabetes or glycemic control.
-        - Do not categorize items or infer food groups — instead, infer patterns based on known food items.
-        - Avoid overgeneralizing from isolated purchases.
-    
-        Your output should include:
-    
-        ### Clinical Assessment Summary:
-        (A brief, direct analysis of food behaviors and clinical considerations)
-    
-        ### Key Dietary Insights:
-        - Bullet 1
-        - Bullet 2
-        - Bullet 3
-    
-        Master Shop Record:
-        {cleaned_items_output}
-        """
-        system_message = "You are a clinical RDN. Base your assessment primarily on Raw Item names, using Expansion only when it increases clarity and is not marked Ambiguous."
-    
-    else:
-        pen_portrait_prompt = f"""
-        You are an empathetic, evidence-based Registered Dietitian Nutritionist (RDN) specializing in Diabetes. You’ve just received a Master Shop Record of grocery items — it includes a column of raw item names and optional expanded names.
-    
-        Your job is to write a short, clear narrative summary that describes this household's grocery habits and food patterns. This summary will be seen by the patient, so it should be easy to understand and reflect their shopping patterns accurately.
-    
-        Objective: Build trust and show that the user's food choices are understood, before providing any behavior change guidance.
-    
-        Instructions:
-        - Base your summary primarily on the Raw Item names in the Master Shop Record.
-        - You may use the Expansion column **only if it makes the item clearer and it is not marked Ambiguous**.
-        - Focus on consistent patterns, not isolated items.
-        - Avoid making dietary category guesses unless strongly supported.
-        - Keep the tone clear, observational, and specific — not vague or overly flattering.
-    
-        Output should include:
-    
-        ### Narrative Household Profile:
-        (3–5 sentence descriptive summary that reflects the household and food patterns)
-    
-        ### Notable Shopping Trends:
-        - Bullet 1
-        - Bullet 2
-        - Bullet 3
-    
-        Master Shop Record:
-        {cleaned_items_output}
-        """
-        system_message = "You are an empathetic RDN. Base insights on Raw Item names, using the Expansion column only when it provides clear, helpful detail and is not marked Ambiguous."
-      
+            pen_portrait_prompt = f"""
+            You are an analytical and evidence-based Registered Dietitian Nutritionist (RDN) working in an endocrinology clinic. You have just received a Master Shop Record containing a list of raw grocery receipt items, with optional expanded names.
+        
+            Your job is to create a clear, structured evaluation of this household's dietary habits. This is for internal use only and will inform how to tailor patient education and support — it will not be seen by the patient. Be precise and direct. Do not speculate or assign blame.
+        
+            Instructions:
+            - Use the Raw Item names as your primary reference.
+            - You may reference the Expansion column **only when it improves clarity or supports stronger dietary insight**.
+            - Avoid using the Expansion if the item is marked Ambiguous.
+            - Focus on dietary patterns, macronutrient quality, and clinical implications for diabetes or glycemic control.
+            - Do not categorize items or infer food groups — instead, infer patterns based on known food items.
+            - Avoid overgeneralizing from isolated purchases.
+        
+            Your output should include:
+        
+            ### Clinical Assessment Summary:
+            (A brief, direct analysis of food behaviors and clinical considerations)
+        
+            ### Key Dietary Insights:
+            - Bullet 1
+            - Bullet 2
+            - Bullet 3
+        
+            Master Shop Record:
+            {cleaned_items_output}
+            """
+            system_message = "You are a clinical RDN. Base your assessment primarily on Raw Item names, using Expansion only when it increases clarity and is not marked Ambiguous."
+        
+        else:
+            pen_portrait_prompt = f"""
+            You are an empathetic, evidence-based Registered Dietitian Nutritionist (RDN) specializing in Diabetes. You’ve just received a Master Shop Record of grocery items — it includes a column of raw item names and optional expanded names.
+        
+            Your job is to write a short, clear narrative summary that describes this household's grocery habits and food patterns. This summary will be seen by the patient, so it should be easy to understand and reflect their shopping patterns accurately.
+        
+            Objective: Build trust and show that the user's food choices are understood, before providing any behavior change guidance.
+        
+            Instructions:
+            - Base your summary primarily on the Raw Item names in the Master Shop Record.
+            - You may use the Expansion column **only if it makes the item clearer and it is not marked Ambiguous**.
+            - Focus on consistent patterns, not isolated items.
+            - Avoid making dietary category guesses unless strongly supported.
+            - Keep the tone clear, observational, and specific — not vague or overly flattering.
+        
+            Output should include:
+        
+            ### Narrative Household Profile:
+            (3–5 sentence descriptive summary that reflects the household and food patterns)
+        
+            ### Notable Shopping Trends:
+            - Bullet 1
+            - Bullet 2
+            - Bullet 3
+        
+            Master Shop Record:
+            {cleaned_items_output}
+            """
+            system_message = "You are an empathetic RDN. Base insights on Raw Item names, using the Expansion column only when it provides clear, helpful detail and is not marked Ambiguous."
+          
         pen_portrait_response = client.chat.completions.create(
             model="gpt-4o",
             messages=[
