@@ -248,11 +248,7 @@ if proceed:
                 f"**Store: {store}**\n{items}" for store, items in store_blocks
             )
     
-            if user_role == "provider":
-                st.markdown("### 🧾 Master Shopping Record (Raw + Expanded):")
-                st.markdown(cleaned_items_output)
-
-
+           
 
         except Exception as e:
             st.error("There was a problem generating the shopping record.")
