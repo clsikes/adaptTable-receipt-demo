@@ -299,14 +299,14 @@ if proceed:
         
             Your job is to write a short, clear narrative summary that describes this household's grocery habits and food patterns. This summary will be seen by the patient, so it should be easy to understand and reflect their shopping patterns accurately.
         
-            Objective: Build trust and show that the user's food choices are understood, before providing any behavior change guidance.
+            Objective: Build trust and show that the user's food choices are understood, before providing any behavior change guidance. Be encouraging, but do not overpraise or exaggerate strengths.
         
             Instructions:
             - Base your summary primarily on the Raw Item names in the Master Shop Record.
             - You may use the Expansion column **only if it makes the item clearer and it is not marked Ambiguous**.
             - Focus on consistent patterns, not isolated items.
             - Avoid making dietary category guesses unless strongly supported.
-            - Keep the tone clear, observational, and specific — not vague or overly flattering.
+            - Avoid vague or overly flattering language such as 'balanced,' 'thoughtful,' or 'seems to.' Instead, write with clarity and confidence. Do not soften your analysis — reflect the real shopping habits plainly, using simple, neutral language.
         
             Output should include:
         
@@ -321,7 +321,8 @@ if proceed:
             Master Shop Record:
             {cleaned_items_output}
             """
-            system_message = "You are an empathetic RDN. Base insights on Raw Item names, using the Expansion column only when it provides clear, helpful detail and is not marked Ambiguous."
+            system_message = "You are an empathetic RDN. Base insights on Raw Item names, using the Expansion column only when it provides stronger clarity without softening the message and is not marked Ambiguous. Avoid flattery — write with confident, plain language."
+
           
         pen_portrait_response = client.chat.completions.create(
             model="gpt-4o",
