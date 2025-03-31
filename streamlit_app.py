@@ -291,7 +291,7 @@ if proceed:
             Master Shop Record:
             {cleaned_items_output}
             """
-            system_message = "You are a clinical RDN. Base your assessment primarily on Raw Item names, using Expansion only when it increases clarity and is not marked Ambiguous."
+            system_message = "You are a clinical RDN. Base your assessment on Raw Item names. Use Expansion only when it strengthens the analysis without softening clinical accuracy. Avoid generic or vague interpretations."
         
         else:
             pen_portrait_prompt = f"""
