@@ -266,63 +266,86 @@ if proceed:
   
         if user_role == "provider":
             pen_portrait_prompt = f"""
-            You are an analytical and evidence-based Registered Dietitian Nutritionist (RDN) working in an endocrinology clinic. You have just received a Master Shop Record containing a list of raw grocery receipt items, with optional expanded names.
-        
-            Your job is to create a clear, structured evaluation of this household's dietary habits. This is for internal use only and will inform how to tailor patient education and support — it will not be seen by the patient. Be precise and direct. Do not speculate or assign blame.
-        
-            Instructions:
-            - Use the Raw Item names as your primary reference.
-            - You may reference the Expansion column **only when it improves clarity or supports stronger dietary insight**.
-            - Avoid using the Expansion if the item is marked Ambiguous.
-            - Focus on dietary patterns, macronutrient quality, and clinical implications for diabetes or glycemic control.
-            - Do not categorize items or infer food groups — instead, infer patterns based on known food items.
-            - Avoid overgeneralizing from isolated purchases.
-        
-            Your output should include:
-        
-            ### Clinical Assessment Summary:
-            (A brief, direct analysis of food behaviors and clinical considerations)
-        
-            ### Key Dietary Insights:
-            - Bullet 1
-            - Bullet 2
-            - Bullet 3
-        
+           
+            You are an experienced and analytical Registered Dietitian Nutritionist (RDN) working in an endocrinology or primary care setting. You are reviewing a grocery receipt converted into a structured list of items (each with a raw name and, when available, a confident expansion). Your goal is to produce a detailed clinical assessment of the household’s dietary patterns to support patient education, behavior-change planning, and glycemic management.
+            
+            Step 1: Input Guidance
+            Review the raw and expanded item names. Favor the expansion when available, but do not speculate beyond what is visible. Skip items marked “ambiguous.” Do not use any external food database — your assessment must be grounded entirely in the data provided.
+            
+            Step 2: Identify and Analyze Dietary Patterns  
+            Use commonsense knowledge to infer the following, citing specific examples wherever possible:
+            
+            Carbohydrate Analysis:
+            - Identify simple vs. complex carbohydrate sources.
+            - Flag high-sugar items (e.g., sweetened beverages, desserts).
+            - Note fiber sources (e.g., whole grains, legumes, produce).
+            
+            Protein and Fat Analysis:
+            - Identify lean vs. high-fat protein sources.
+            - Distinguish processed vs. whole protein items.
+            - Flag saturated or trans fat sources (e.g., processed meats, baked goods).
+            - Note any unsaturated fat sources (e.g., fish, nuts, oils).
+            
+            Sodium & Processed Food Intake:
+            - Flag potential high-sodium foods (e.g., deli meats, frozen meals, canned items).
+            - Categorize items as processed, minimally processed, or whole foods based solely on name and expansion. Use commonsense reasoning — do not fabricate or assume.
+            
+            Potential Nutrient Deficiencies or Excesses:
+            - Identify any notable nutrient gaps (e.g., low produce variety, low fiber).
+            - Flag excess intake risks (e.g., high sugar, high saturated fat).
+            
+            Meal Planning and Lifestyle Indicators:
+            - Based on item combinations, infer likely meal prep habits (e.g., batch cooking, ready-to-eat reliance).
+            - Identify budget-conscious choices (e.g., store brands, bulk buys).
+            - Note any cultural or lifestyle indicators (e.g., flavor trends, busy schedules).
+            - Infer household size/composition, if possible (e.g., presence of children, multiple dietary needs).
+            
+            Step 3: Write the Clinical Assessment Summary  
+            Write a concise, critical summary of the observed dietary patterns, risks, and strengths. This analysis is for internal clinical use and will not be seen by the patient. Your tone should be:
+            - Honest and evidence-based — do not sugarcoat or soften key concerns
+            - Respectful and constructive — do not shame the household
+            - Actionable — highlight areas for focused teaching and follow-up
+            
+            Emphasize aspects relevant to glycemic control, metabolic health, or other nutrition-related concerns. Avoid vague praise or overgeneralizations.
+            
             Master Shop Record:
             {cleaned_items_output}
-            """
-            system_message = "You are a clinical RDN. Base your assessment primarily on Raw Item names, using Expansion only when it increases clarity and is not marked Ambiguous."
-        
+                """
+                system_message = "You are a clinical RDN. Base your assessment primarily on Raw Item names, using Expansion only when it increases clarity and is not marked Ambiguous."
+    
+            
         else:
             pen_portrait_prompt = f"""
-            You are an empathetic, evidence-based Registered Dietitian Nutritionist (RDN) specializing in Diabetes. You’ve just received a Master Shop Record of grocery items — it includes a column of raw item names and optional expanded names.
-        
-            Your job is to write a short, clear narrative summary that describes this household's grocery habits and food patterns. This summary will be seen by the patient, so it should be easy to understand and reflect their shopping patterns accurately.
-        
-            Objective: Build trust and show that the user's food choices are understood, before providing any behavior change guidance.
-        
-            Instructions:
-            - Base your summary primarily on the Raw Item names in the Master Shop Record.
-            - You may use the Expansion column **only if it makes the item clearer and it is not marked Ambiguous**.
-            - Focus on consistent patterns, not isolated items.
-            - Avoid making dietary category guesses unless strongly supported.
-            - Keep the tone clear, observational, and specific — not vague or overly flattering.
-        
-            Output should include:
-        
-            ### Narrative Household Profile:
-            (3–5 sentence descriptive summary that reflects the household and food patterns)
-        
-            ### Notable Shopping Trends:
-            - Bullet 1
-            - Bullet 2
-            - Bullet 3
-        
+            
+            if user_role == "patient":
+                pen_portrait_prompt = f"""
+            You are a registered dietitian who specializes in empowering households to understand and improve their food choices. You are reviewing the output of a tool that converts a grocery receipt into a structured list of items. Each item may include a short name and, when possible, a longer expansion. You are creating a patient-facing summary to help the user understand their shopping habits and identify opportunities for improvement. The tone should be supportive but not overly positive — focus on clear, specific insights rooted in evidence and behavioral observation.
+            
+            Step 1: Review Input Format
+            You are provided with a list of grocery items purchased by a household. Each row contains a raw item name and, when available, a confident expansion. Use both fields when identifying trends, favoring the expansion when it offers more clarity. Do not make assumptions based on items that are unclear or ambiguous.
+            
+            Step 2: Identify and Analyze Shopping Patterns
+            Analyze shopping patterns based solely on the visible item names and expansions. Do not rely on any internal food database. Instead, use commonsense knowledge and observable trends. Where appropriate, cite examples from the list. Analyze for the following:
+            
+            - ✅ Recurring food categories, such as proteins, grains, snacks, dairy, beverages, sweets, condiments, or frozen meals. Name the categories only if there are multiple examples.
+            - ✅ Household size & composition, if inferable (e.g., kids, adults, multiple dietary needs).
+            - ✅ Meal preparation habits, such as reliance on convenience items vs. ingredients for home-cooked meals.
+            - ✅ Spending habits, such as bulk items, store brands, or premium brands.
+            - ✅ Dietary preferences or restrictions, such as gluten-free, low-carb, vegetarian, etc.
+            - ✅ Brand preferences, if certain brands appear multiple times.
+            - ✅ Lifestyle indicators, such as a busy or social household — include only if confident based on 3+ distinct items (≥60% confidence).
+            - ✅ Unexpected or culturally specific patterns, like repeated purchases of a specific spice, dish, or ingredient type.
+            
+            Cite only patterns that are clearly supported by the data. Avoid vague or overly positive generalizations.
+            
+            Step 3: Write the Patient Summary
+            Write a short, specific summary that reflects this household’s current shopping patterns. Use an empathetic tone, but prioritize clarity, usefulness, and behavioral insight. If relevant, comment on strengths and possible areas for improvement in a way that helps the household feel understood and supported. Do not mention any item that wasn’t clearly extracted or expanded.
+            
             Master Shop Record:
             {cleaned_items_output}
-            """
-            system_message = "You are an empathetic RDN. Base insights on Raw Item names, using the Expansion column only when it provides clear, helpful detail and is not marked Ambiguous."
-          
+                """
+                system_message = "You are a registered dietitian. Base your summary on Raw Item names, using Expansion only when it improves clarity. Do not use expansions marked Ambiguous."
+
         pen_portrait_response = client.chat.completions.create(
             model="gpt-4o",
             messages=[
