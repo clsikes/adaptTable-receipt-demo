@@ -35,8 +35,12 @@ st.caption(f"🔧 Test Mode Active — Saving session data to: `{SESSION_FOLDER}
 # 🔄 Save any data dictionary to JSON
 def save_json(data, filename):
     full_path = os.path.join(SESSION_FOLDER, filename)
+    print(f"Saving to: {full_path}")  # 🐛 debug line
     with open(full_path, "w") as f:
         json.dump(data, f, indent=2)
+
+st.success(f"✅ test_file.json written to: {SESSION_FOLDER}")
+
 
 # 🔍 TEST SAVE – delete after verifying it works
 test_data = {"test": "file save check", "session_id": SESSION_ID}
