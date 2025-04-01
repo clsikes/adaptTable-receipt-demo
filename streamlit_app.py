@@ -34,8 +34,8 @@ st.caption(f"🔧 Test Mode Active — Saving session data to: `{SESSION_FOLDER}
 
 # 🔄 Save any data dictionary to JSON
 def save_json(data, filename):
-    full_path = os.path.join(SESSION_FOLDER, filename)
-    print(f"Saving to: {full_path}")  # 🐛 debug line
+    full_path = os.path.abspath(os.path.join(SESSION_FOLDER, filename))
+    print(f"💾 Attempting to save: {full_path}")
     with open(full_path, "w") as f:
         json.dump(data, f, indent=2)
 
