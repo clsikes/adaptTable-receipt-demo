@@ -31,16 +31,16 @@ os.makedirs(SESSION_FOLDER, exist_ok=True)
 # 🧾 Optional display for confirmation
 st.caption(f"🔧 Test Mode Active — Saving session data to: `{SESSION_FOLDER}`")
 
-# 🔍 TEST SAVE – delete after verifying it works
-test_data = {"test": "file save check", "session_id": SESSION_ID}
-save_json(test_data, "test_file.json")
-
 
 # 🔄 Save any data dictionary to JSON
 def save_json(data, filename):
     full_path = os.path.join(SESSION_FOLDER, filename)
     with open(full_path, "w") as f:
         json.dump(data, f, indent=2)
+
+# 🔍 TEST SAVE – delete after verifying it works
+test_data = {"test": "file save check", "session_id": SESSION_ID}
+save_json(test_data, "test_file.json")
 
 
 # --- API Keys ---
