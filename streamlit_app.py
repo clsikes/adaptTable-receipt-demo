@@ -9,6 +9,27 @@ import base64
 import requests
 import streamlit.components.v1 as components
 
+import os
+import json
+from datetime import datetime
+import streamlit as st
+
+# 🧪 Test Mode Flag
+TEST_MODE = True  # Set to False when you're running the actual pilot
+
+# 📁 Session ID: unique timestamped folder per session
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+SESSION_ID = f"HH_test_{timestamp}" if TEST_MODE else f"HH_live_{timestamp}"
+
+# 📂 File save paths
+BASE_PATH = "saved_outputs/sandbox_sessions" if TEST_MODE else "saved_outputs/pilot_sessions"
+SESSION_FOLDER = os.path.join(BASE_PATH, SESSION_ID)
+
+# 🔨 Create session folder if it doesn't exist
+os.makedirs(SESSION_FOLDER, exist_ok=True)
+
+# 🧾 Optional display for confirmation
+st.caption(f"🔧 Test Mode Active — Saving session data to: `{SESSION_FOLDER}`")
 
 
 
