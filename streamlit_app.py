@@ -46,6 +46,10 @@ st.success(f"✅ test_file.json written to: {SESSION_FOLDER}")
 test_data = {"test": "file save check", "session_id": SESSION_ID}
 save_json(test_data, "test_file.json")
 
+if st.button("💾 Test File Save Now"):
+    test_data = {"status": "manual test", "session_id": SESSION_ID}
+    save_json(test_data, "manual_test_file.json")
+    st.success("✅ manual_test_file.json has been saved.")
 
 # --- API Keys ---
 GOOGLE_VISION_API_KEY = st.secrets["google_api_key"]
