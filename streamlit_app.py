@@ -31,6 +31,11 @@ os.makedirs(SESSION_FOLDER, exist_ok=True)
 # 🧾 Optional display for confirmation
 st.caption(f"🔧 Test Mode Active — Saving session data to: `{SESSION_FOLDER}`")
 
+# 🔄 Save any data dictionary to JSON
+def save_json(data, filename):
+    full_path = os.path.join(SESSION_FOLDER, filename)
+    with open(full_path, "w") as f:
+        json.dump(data, f, indent=2)
 
 
 # --- API Keys ---
@@ -274,7 +279,8 @@ if proceed:
                 f"**Store: {store}**\n{items}" for store, items in store_blocks
             )
     
-           
+            save_json({"store_blocks": store_blocks}, "master_shop_record.json")
+
 
         except Exception as e:
             st.error("There was a problem generating the shopping record.")
@@ -381,6 +387,8 @@ if proceed:
   
         st.subheader("💡 Summary of Your Shopping Habits" if user_role == "patient" else "🩺 Final Household Summary")
         st.markdown(pen_portrait_output)
+        with open(os.path.join(SESSION_FOLDER, "narrative_summary.txt"), "w") as f:
+        f.write(pen_portrait_output)
 
 
 
