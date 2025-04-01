@@ -394,8 +394,7 @@ if proceed:
               # Final Output
        
   
-        st.subheader("💡 Summary of Your Shopping Habits" if user_role == "patient" else "🩺 Final
-        Household Summary")
+        st.subheader("💡 Summary of Your Shopping Habits" if user_role == "patient" else "🩺 Final Household Summary")
         st.markdown(pen_portrait_output)
         with open(os.path.join(SESSION_FOLDER, "narrative_summary.txt"), "w") as f:
             f.write(pen_portrait_output)
