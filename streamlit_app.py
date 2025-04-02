@@ -63,11 +63,21 @@ st.markdown(
 
 # --- Welcome Message ---
 st.markdown("""
-#### 👋 Welcome to AdaptTable – your household health co-pilot.
+### 👋 Welcome to AdaptTable – your household health co-pilot
 
-I’m here to help you meet your family’s health goals through smarter, easier food choices.
+I’m here to make improving your household’s health through food easier, more achievable, and more acceptable for everyone (yes, even you—Seafood-Skeptic-of-the-Deep 🐟🙅‍♂️).
 
-To get started, I’ll take a look at your recent grocery receipts. This helps me understand your household’s food habits so I can tailor guidance to your family’s needs.
+Learning how to manage a health condition—or simply eat better—can feel overwhelming:
+- 🤔 *How am I doing with my current diet?*  
+- 🔄 *What exactly needs to change?*  
+- 👨‍👩‍👧 *How do I make changes that my whole household will actually accept?*
+
+We’ll start by analyzing your most recent grocery receipts to spot habits that might help—or hinder—your health goals.  
+From there, I’ll offer realistic food swaps and tailor shopping, meal plans, and cooking strategies for your household’s specific needs.
+
+📸 **Let’s get started!**  
+Snap a photo of your grocery receipt—make sure the store name is visible.  
+Upload as many as you like (the more items, the better)!
 """)
 
 # --- Role-Based Access (Hybrid: URL + Password) ---
