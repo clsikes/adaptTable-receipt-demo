@@ -375,7 +375,7 @@ if proceed:
         st.subheader("💡 Summary of Your Shopping Habits" if user_role == "patient" else "🩺 Final Household Summary")
         st.markdown(pen_portrait_output)
 
-            # --- Household Summary Verification ---
+        # --- Household Summary Verification ---
         st.subheader("📋 Does this sound like your household?" if user_role == "patient" else "📋 Verify with your patient:")
         
         response = st.radio(
@@ -386,15 +386,20 @@ if proceed:
                 "❌ Not accurate at all"
             ]
         )
-        if "show_helps_hinders" not in st.session_state:
-            st.session_state.show_helps_hinders = False
-
+         # Handle correction input if response is not "Yes, mostly accurate"
         if response != "✅ Yes, mostly accurate":
             st.info("Oops! We sometimes make mistakes. Do you have a sec to tell us what’s off so we can improve?")
             correction_text = st.text_area("Optional: Tell us what’s off", placeholder="E.g., 'We don’t have kids' or 'We cook more than it says.'")
             st.caption("⏭️ No worries if you don’t have time — you’ll get a chance to confirm and correct details in the next step.")
-
-    # 👇 Only then define the GPT prompt
+        
+        # Always show the continue button after the radio
+        if st.button("➡️ Continue to Food Guidance"):
+            st.session_state.show_helps_hinders = True
+        
+        # --- Helps / Hinders GPT Analysis Block ---
+        if st.session_state.get("show_helps_hinders", False):
+            
+        # 👇 Only then define the GPT prompt
 
             helps_hinders_prompt = """
         🧠 ROLE:
@@ -501,16 +506,16 @@ if proceed:
 
         """
         
-            response = client.chat.completions.create(
-                model="gpt-4o",
-                messages=[
-                    {"role": "system", "content": "You are a registered dietitian... [optional shorter setup]"},
-                    {"role": "user", "content": helps_hinders_prompt}
-                ]
-            )
-            helps_hinders_output = response.choices[0].message.content
-            st.markdown("### 🍽️ How Your Foods May Impact Blood Sugar")
-            st.markdown(helps_hinders_output)
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are a registered dietitian... [optional shorter setup]"},
+                {"role": "user", "content": helps_hinders_prompt}
+            ]
+        )
+        helps_hinders_output = response.choices[0].message.content
+        st.markdown("### 🍽️ How Your Foods May Impact Blood Sugar")
+        st.markdown(helps_hinders_output)
 
 
     except Exception as e:
