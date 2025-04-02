@@ -384,10 +384,12 @@ if proceed:
                 "✅ Yes, mostly accurate",
                 "✏️ A few things are off",
                 "❌ Not accurate at all"
-            ]
+            ],
+            key="summary_response"  # ✅ Use session state
         )
+
          # Handle correction input if response is not "Yes, mostly accurate"
-        if response != "✅ Yes, mostly accurate":
+        if st.session_state.summary_response != "✅ Yes, mostly accurate":
             st.info("Oops! We sometimes make mistakes. Do you have a sec to tell us what’s off so we can improve?")
             correction_text = st.text_area("Optional: Tell us what’s off", placeholder="E.g., 'We don’t have kids' or 'We cook more than it says.'")
             st.caption("⏭️ No worries if you don’t have time — you’ll get a chance to confirm and correct details in the next step.")
@@ -402,120 +404,120 @@ if proceed:
         # 👇 Only then define the GPT prompt
 
             helps_hinders_prompt = """
-        🧠 ROLE:
-        You are a registered dietitian helping a household understand how their recent grocery purchases may affect blood sugar control for someone managing Type 1 Diabetes (T1D).
-        
-        🎯 GOAL:
-        From the Master Shopping Record, analyze the food items and produce friendly, fact-based, actionable guidance grounded in nutritional science that:
-        
-        - Helps users understand which foods support or challenge blood sugar control
-        - Explains *why* in clear, evidence-based language
-        - Provides alternatives and practical adaptation tips
-        - Supports shared decision-making between patient and provider
-        
-        Only use food items that appear in the provided shopping list — never invent or assume new ones.
-        
-        ---
-        
-        STEP 1️⃣: Classify All Items
-        
-        Review each food and sort it into one of two categories:
-        
-        ✅ **Helps Blood Sugar Control**  
-        → Low-GI, high-fiber, high-protein, or rich in healthy fats.
-        
-        ⚠️ **May Hinder Blood Sugar Control**  
-        → High-GI, refined carbs, low fiber, low protein, or high in added sugar.
-        
-        ---
-        
-        STEP 2️⃣: For Each “Helpful” Food, Use This Format:
-        
-        **🥦 Food Item:** [name]  
-        **✅ Why It’s Great for Blood Sugar Control:** A short explanation (e.g., "High fiber slows digestion and reduces spikes")  
-        **🍽️ How to Use It More Often:** Suggest realistic ways to use it more (e.g., "Great in oatmeal", "Pair with fruit as a snack")
-        
-        → Space each helpful food as its own clear block for easy scrolling.
-        
-        ---
-        
-        STEP 3️⃣: For Each “Challenging” Food, Use This Format:
-        
-        **🍩 Food Item:** [name]  
-        **❌ Why It May Hinder Blood Sugar Control:** Explanation based on science (e.g., "Refined carbs cause rapid glucose spikes and have little fiber or protein")  
-        **✅ Try Instead:** Suggest a similar food with a better glycemic profile  
-        **🔄 Adaptation Tip:** Suggest how to still use or enjoy this food with adjustments (e.g., pairing with protein, changing timing, reducing portion)
-        
-        → Again, space each item out visually to improve readability.
-        
-        ---
-        
-        STEP 4️⃣: Always Include a “Top Tips for Blood Sugar Stability” Section
-        
-        Use this list to reinforce key teaching points, especially if they didn’t appear naturally in the earlier analysis.
-        
-        If applicable, personalize a few tips based on the food list (e.g., if juice or white bread is present).
-        
-        💡 **Top Tips for Blood Sugar Stability**
-        
-        **🥚 Savory Breakfast First**  
-        Most people love a sweet start like [insert item if available – e.g., bananas or honey]. But mornings are when your body is more insulin-resistant — so starting with sugary foods can lead to big blood sugar spikes. Have some protein or fat first (e.g., turkey sausage, egg, avocado) to slow down absorption.
-        
-        **🥦 Eat Veggies First**  
-        If your meals include pasta, rice, or bread, eat veggies or salad first. The fiber acts like a barrier and slows down carb absorption — making blood sugar easier to manage.
-        
-        **🍽️ Eat In This Order:**  
-        Veggies → Protein/Fat → Carbs  
-        This simple order change can dramatically reduce blood sugar spikes.
-        
-        **🧬 Pair Your Carbs**  
-        Got bread, granola bars, or crackers? Pair them with nut butter, cheese, or Greek yogurt. The added fat and protein help slow digestion.
-        
-        **👟 Move After Meals**  
-        Even 10 minutes of walking after a meal can help flatten your glucose curve and aid digestion.
-        
-        **🍏 Juice = Medicine, Not a Drink**  
-        Juice like [insert juice brand if available] works great for treating low blood sugar — but not for sipping throughout the day. Try water with lemon or a splash of juice instead.
-        
-        **🥖 Choose Whole Over Processed**  
-        Highly processed foods (like [insert example from cart]) spike blood sugar faster. Opt for whole, fiber-rich versions when you can.
-        
-        **🌾 Fiber = Power**  
-        Fiber slows digestion and supports blood sugar balance. Beans, whole grains, lentils, veggies — aim for more!
-        
-        **🧘‍♀️ Sleep & Stress Matter**  
-        Poor sleep and stress can raise blood sugar. Prioritize rest and find calming rituals like yoga, walking, or mindfulness.
-        
-        ---
-        
-        STEP 5️⃣: Wrap-Up Encouragement (1–2 lines)
-        
-        End with a motivational, non-judgmental nudge to keep going. Example:
-        
-        > “You’ve already got a great start. With just a few small swaps and strategies, your meals can support more stable blood sugar every day.”
-        
-        ---
-        
-        ✅ RULES:
-        
-        - Never make up food items
-        - Do not give medical advice or suggest medication
-        - Use a friendly, informative tone that builds confidence
-        - Avoid overgeneralization or vague praise — keep it grounded and specific
-        - Keep the entire output under ~700 words
-
-        """
-        
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "You are a registered dietitian... [optional shorter setup]"},
-                {"role": "user", "content": helps_hinders_prompt}
-            ]
-        )
-        helps_hinders_output = response.choices[0].message.content
-        st.markdown("### 🍽️ How Your Foods May Impact Blood Sugar")
-        st.markdown(helps_hinders_output)
+            🧠 ROLE:
+            You are a registered dietitian helping a household understand how their recent grocery purchases may affect blood sugar control for someone managing Type 1 Diabetes (T1D).
+            
+            🎯 GOAL:
+            From the Master Shopping Record, analyze the food items and produce friendly, fact-based, actionable guidance grounded in nutritional science that:
+            
+            - Helps users understand which foods support or challenge blood sugar control
+            - Explains *why* in clear, evidence-based language
+            - Provides alternatives and practical adaptation tips
+            - Supports shared decision-making between patient and provider
+            
+            Only use food items that appear in the provided shopping list — never invent or assume new ones.
+            
+            ---
+            
+            STEP 1️⃣: Classify All Items
+            
+            Review each food and sort it into one of two categories:
+            
+            ✅ **Helps Blood Sugar Control**  
+            → Low-GI, high-fiber, high-protein, or rich in healthy fats.
+            
+            ⚠️ **May Hinder Blood Sugar Control**  
+            → High-GI, refined carbs, low fiber, low protein, or high in added sugar.
+            
+            ---
+            
+            STEP 2️⃣: For Each “Helpful” Food, Use This Format:
+            
+            **🥦 Food Item:** [name]  
+            **✅ Why It’s Great for Blood Sugar Control:** A short explanation (e.g., "High fiber slows digestion and reduces spikes")  
+            **🍽️ How to Use It More Often:** Suggest realistic ways to use it more (e.g., "Great in oatmeal", "Pair with fruit as a snack")
+            
+            → Space each helpful food as its own clear block for easy scrolling.
+            
+            ---
+            
+            STEP 3️⃣: For Each “Challenging” Food, Use This Format:
+            
+            **🍩 Food Item:** [name]  
+            **❌ Why It May Hinder Blood Sugar Control:** Explanation based on science (e.g., "Refined carbs cause rapid glucose spikes and have little fiber or protein")  
+            **✅ Try Instead:** Suggest a similar food with a better glycemic profile  
+            **🔄 Adaptation Tip:** Suggest how to still use or enjoy this food with adjustments (e.g., pairing with protein, changing timing, reducing portion)
+            
+            → Again, space each item out visually to improve readability.
+            
+            ---
+            
+            STEP 4️⃣: Always Include a “Top Tips for Blood Sugar Stability” Section
+            
+            Use this list to reinforce key teaching points, especially if they didn’t appear naturally in the earlier analysis.
+            
+            If applicable, personalize a few tips based on the food list (e.g., if juice or white bread is present).
+            
+            💡 **Top Tips for Blood Sugar Stability**
+            
+            **🥚 Savory Breakfast First**  
+            Most people love a sweet start like [insert item if available – e.g., bananas or honey]. But mornings are when your body is more insulin-resistant — so starting with sugary foods can lead to big blood sugar spikes. Have some protein or fat first (e.g., turkey sausage, egg, avocado) to slow down absorption.
+            
+            **🥦 Eat Veggies First**  
+            If your meals include pasta, rice, or bread, eat veggies or salad first. The fiber acts like a barrier and slows down carb absorption — making blood sugar easier to manage.
+            
+            **🍽️ Eat In This Order:**  
+            Veggies → Protein/Fat → Carbs  
+            This simple order change can dramatically reduce blood sugar spikes.
+            
+            **🧬 Pair Your Carbs**  
+            Got bread, granola bars, or crackers? Pair them with nut butter, cheese, or Greek yogurt. The added fat and protein help slow digestion.
+            
+            **👟 Move After Meals**  
+            Even 10 minutes of walking after a meal can help flatten your glucose curve and aid digestion.
+            
+            **🍏 Juice = Medicine, Not a Drink**  
+            Juice like [insert juice brand if available] works great for treating low blood sugar — but not for sipping throughout the day. Try water with lemon or a splash of juice instead.
+            
+            **🥖 Choose Whole Over Processed**  
+            Highly processed foods (like [insert example from cart]) spike blood sugar faster. Opt for whole, fiber-rich versions when you can.
+            
+            **🌾 Fiber = Power**  
+            Fiber slows digestion and supports blood sugar balance. Beans, whole grains, lentils, veggies — aim for more!
+            
+            **🧘‍♀️ Sleep & Stress Matter**  
+            Poor sleep and stress can raise blood sugar. Prioritize rest and find calming rituals like yoga, walking, or mindfulness.
+            
+            ---
+            
+            STEP 5️⃣: Wrap-Up Encouragement (1–2 lines)
+            
+            End with a motivational, non-judgmental nudge to keep going. Example:
+            
+            > “You’ve already got a great start. With just a few small swaps and strategies, your meals can support more stable blood sugar every day.”
+            
+            ---
+            
+            ✅ RULES:
+            
+            - Never make up food items
+            - Do not give medical advice or suggest medication
+            - Use a friendly, informative tone that builds confidence
+            - Avoid overgeneralization or vague praise — keep it grounded and specific
+            - Keep the entire output under ~700 words
+    
+            """
+            
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": "You are a registered dietitian... [optional shorter setup]"},
+                    {"role": "user", "content": helps_hinders_prompt}
+                ]
+            )
+            helps_hinders_output = response.choices[0].message.content
+            st.markdown("### 🍽️ How Your Foods May Impact Blood Sugar")
+            st.markdown(helps_hinders_output)
 
 
     except Exception as e:
