@@ -1,3 +1,7 @@
+# AdaptTable v1.4 – Refined patient and provider prompts - richer output
+# 🗓️ March 31 12:03 PM | ✅ Working
+# Added: prompt language for richer output
+
 # AdaptTable v1.3 – Raw + Expansion Test
 # 🗓️ Mar 30, 12:57 PM | ✅ Working
 # Added: Scrollable record, expansion in RDN summary
@@ -9,47 +13,8 @@ import base64
 import requests
 import streamlit.components.v1 as components
 
-import os
-import json
-from datetime import datetime
-import streamlit as st
-
-# 🧪 Test Mode Flag
-TEST_MODE = True  # Set to False when you're running the actual pilot
-
-# 📁 Session ID: unique timestamped folder per session
-timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-SESSION_ID = f"HH_test_{timestamp}" if TEST_MODE else f"HH_live_{timestamp}"
-
-# 📂 File save paths
-BASE_PATH = "saved_outputs/sandbox_sessions" if TEST_MODE else "saved_outputs/pilot_sessions"
-SESSION_FOLDER = os.path.join(BASE_PATH, SESSION_ID)
-
-# 🔨 Create session folder if it doesn't exist
-os.makedirs(SESSION_FOLDER, exist_ok=True)
-
-# 🧾 Optional display for confirmation
-st.caption(f"🔧 Test Mode Active — Saving session data to: `{SESSION_FOLDER}`")
 
 
-# 🔄 Save any data dictionary to JSON
-def save_json(data, filename):
-    full_path = os.path.abspath(os.path.join(SESSION_FOLDER, filename))
-    print(f"💾 Attempting to save: {full_path}")
-    with open(full_path, "w") as f:
-        json.dump(data, f, indent=2)
-
-st.success(f"✅ test_file.json written to: {SESSION_FOLDER}")
-
-
-# 🔍 TEST SAVE – delete after verifying it works
-test_data = {"test": "file save check", "session_id": SESSION_ID}
-save_json(test_data, "test_file.json")
-
-if st.button("💾 Test File Save Now"):
-    test_data = {"status": "manual test", "session_id": SESSION_ID}
-    save_json(test_data, "manual_test_file.json")
-    st.success("✅ manual_test_file.json has been saved.")
 
 # --- API Keys ---
 GOOGLE_VISION_API_KEY = st.secrets["google_api_key"]
@@ -292,8 +257,7 @@ if proceed:
                 f"**Store: {store}**\n{items}" for store, items in store_blocks
             )
     
-            save_json({"store_blocks": store_blocks}, "master_shop_record.json")
-
+           
 
         except Exception as e:
             st.error("There was a problem generating the shopping record.")
@@ -400,8 +364,6 @@ if proceed:
   
         st.subheader("💡 Summary of Your Shopping Habits" if user_role == "patient" else "🩺 Final Household Summary")
         st.markdown(pen_portrait_output)
-        with open(os.path.join(SESSION_FOLDER, "narrative_summary.txt"), "w") as f:
-            f.write(pen_portrait_output)
 
 
 
