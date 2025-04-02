@@ -375,6 +375,25 @@ if proceed:
         st.subheader("💡 Summary of Your Shopping Habits" if user_role == "patient" else "🩺 Final Household Summary")
         st.markdown(pen_portrait_output)
 
+            # --- Household Summary Verification ---
+        st.subheader("📋 Does this sound like your household?" if user_role == "patient" else "📋 Verify with your patient:")
+        
+        response = st.radio(
+            label="",
+            options=[
+                "✅ Yes, mostly accurate",
+                "✏️ A few things are off",
+                "❌ Not accurate at all"
+            ]
+        )
+        
+        if response != "✅ Yes, mostly accurate":
+            st.info("Oops! We sometimes make mistakes. Do you have a sec to tell us what’s off so we can improve?")
+            correction_text = st.text_area("Optional: Tell us what’s off", placeholder="E.g., 'We don’t have kids' or 'We cook more than it says.'")
+        
+            st.caption("⏭️ No worries if you don’t have time — you’ll get a chance to confirm and correct details in the next step.")
+
+
 
 
     except Exception as e:
