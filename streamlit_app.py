@@ -397,8 +397,8 @@ if proceed:
         # Always show the continue button after the radio
         if st.button("➡️ Continue to Food Guidance"):
             st.session_state.show_helps_hinders = True
-        
-        # --- Helps / Hinders GPT Analysis Block ---
+            st.experimental_rerun()  # ← This forces the app to re-run and detect the flag
+         # --- Helps / Hinders GPT Analysis Block ---
         if st.session_state.get("show_helps_hinders", False):
             
         # 👇 Only then define the GPT prompt
@@ -514,10 +514,10 @@ if proceed:
                     {"role": "system", "content": "You are a registered dietitian... [optional shorter setup]"},
                     {"role": "user", "content": helps_hinders_prompt}
                 ]
-            )
-            helps_hinders_output = response.choices[0].message.content
-            st.markdown("### 🍽️ How Your Foods May Impact Blood Sugar")
-            st.markdown(helps_hinders_output)
+             )
+             helps_hinders_output = response.choices[0].message.content
+             st.markdown("### 🍽️ How Your Foods May Impact Blood Sugar")
+             st.markdown(helps_hinders_output)
 
 
     except Exception as e:
