@@ -400,7 +400,7 @@ if proceed:
             st.experimental_rerun()  # ← This forces the app to re-run and detect the flag
         
         # --- Helps / Hinders GPT Analysis Block ---
-if st.session_state.get("show_helps_hinders", False):
+    if st.session_state.get("show_helps_hinders", False):
             
         # 👇 Only then define the GPT prompt
 
