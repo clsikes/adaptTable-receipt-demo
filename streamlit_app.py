@@ -393,8 +393,9 @@ if proceed:
         
             st.caption("⏭️ No worries if you don’t have time — you’ll get a chance to confirm and correct details in the next step.")
 
-            helps_hinders_prompt = """
+            # 🔎 GPT Prompt: Helps / Hinders
 
+            helps_hinders_prompt = """
         🧠 ROLE:
         You are a registered dietitian helping a household understand how their recent grocery purchases may affect blood sugar control for someone managing Type 1 Diabetes (T1D).
         
