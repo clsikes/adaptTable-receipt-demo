@@ -507,8 +507,8 @@ if proceed:
                 ]
             )
             helps_hinders_output = response.choices[0].message.content
-                st.markdown("### 🍽️ How Your Foods May Impact Blood Sugar")
-                st.markdown(helps_hinders_output)
+            st.markdown("### 🍽️ How Your Foods May Impact Blood Sugar")
+            st.markdown(helps_hinders_output)
 
 
     except Exception as e:
