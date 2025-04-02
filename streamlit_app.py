@@ -386,14 +386,15 @@ if proceed:
                 "❌ Not accurate at all"
             ]
         )
-        
+        if "show_helps_hinders" not in st.session_state:
+            st.session_state.show_helps_hinders = False
+
         if response != "✅ Yes, mostly accurate":
             st.info("Oops! We sometimes make mistakes. Do you have a sec to tell us what’s off so we can improve?")
             correction_text = st.text_area("Optional: Tell us what’s off", placeholder="E.g., 'We don’t have kids' or 'We cook more than it says.'")
-        
             st.caption("⏭️ No worries if you don’t have time — you’ll get a chance to confirm and correct details in the next step.")
 
-            # 🔎 GPT Prompt: Helps / Hinders
+    # 👇 Only then define the GPT prompt
 
             helps_hinders_prompt = """
         🧠 ROLE:
