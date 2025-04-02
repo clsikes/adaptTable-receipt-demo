@@ -371,7 +371,10 @@ if proceed:
 
               # Final Output
        
-  
+        except Exception as e:
+            st.error("There was a problem generating the Household Profile.")
+            st.exception(e)
+
         st.subheader("💡 Summary of Your Shopping Habits" if user_role == "patient" else "🩺 Final Household Summary")
         st.markdown(pen_portrait_output)
 
