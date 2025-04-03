@@ -12,12 +12,17 @@ def on_continue_click():
     st.session_state.show_helps_hinders = True
 
 # --- Load Secrets ---
-secrets_path = os.path.join(os.path.dirname(__file__), "config", "secrets.toml")
-secrets = toml.load(secrets_path)
+try:
+    # Try to load from Streamlit Cloud secrets first
+    GOOGLE_VISION_API_KEY = st.secrets["google_api_key"]
+    OPENAI_API_KEY = st.secrets["openai_api_key"]
+except:
+    # Fallback to local secrets.toml for development
+    secrets_path = os.path.join(os.path.dirname(__file__), "config", "secrets.toml")
+    secrets = toml.load(secrets_path)
+    GOOGLE_VISION_API_KEY = secrets["google_api_key"]
+    OPENAI_API_KEY = secrets["openai_api_key"]
 
-# --- API Keys ---
-GOOGLE_VISION_API_KEY = secrets["google_api_key"]
-OPENAI_API_KEY = secrets["openai_api_key"]
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 # --- Initialize Session State ---
