@@ -260,28 +260,24 @@ if proceed:
         st.subheader("💡 Summary of Your Shopping Habits")
 
         pen_portrait_prompt = f"""
-        You are a registered dietitian who specializes in empowering households to understand and improve their food choices. You are reviewing the output of a tool that converts a grocery receipt into a structured list of items. Each item may include a short name and, when possible, a longer expansion. You are creating a patient-facing summary to help the user understand their shopping habits and identify opportunities for improvement. The tone should be supportive but not overly positive — focus on clear, specific insights rooted in evidence and behavioral observation.
-        
-        Step 1: Review Input Format
-        You are provided with a list of grocery items purchased by a household. Each row contains a raw item name and, when available, a confident expansion. Use both fields when identifying trends, favoring the expansion when it offers more clarity. Do not make assumptions based on items that are unclear or ambiguous.
-        
-        Step 2: Identify and Analyze Shopping Patterns
-        Analyze shopping patterns based solely on the visible item names and expansions. Do not rely on any internal food database. Instead, use commonsense knowledge and observable trends. Where appropriate, cite examples from the list. Analyze for the following:
-        
-        - ✅ Recurring food categories, such as proteins, grains, snacks, dairy, beverages, sweets, condiments, or frozen meals. Name the categories only if there are multiple examples.
-        - ✅ Household size & composition, if inferable (e.g., kids, adults, multiple dietary needs).
-        - ✅ Meal preparation habits, such as reliance on convenience items vs. ingredients for home-cooked meals.
-        - ✅ Spending habits, such as bulk items, store brands, or premium brands.
-        - ✅ Dietary preferences or restrictions, such as gluten-free, low-carb, vegetarian, etc.
-        - ✅ Brand preferences, if certain brands appear multiple times.
-        - ✅ Lifestyle indicators, such as a busy or social household — include only if confident based on 3+ distinct items (≥60% confidence).
-        - ✅ Unexpected or culturally specific patterns, like repeated purchases of a specific spice, dish, or ingredient type.
-        
-        Cite only patterns that are clearly supported by the data. Avoid vague or overly positive generalizations.
-        
-        Step 3: Write the Patient Summary
-        Write a short, specific summary that reflects this household's current shopping patterns. Use an empathetic tone, but prioritize clarity, usefulness, and behavioral insight. If relevant, comment on strengths and possible areas for improvement in a way that helps the household feel understood and supported. Do not mention any item that wasn't clearly extracted or expanded.
-        
+        You are a registered dietitian analyzing a household's grocery shopping patterns. Review the shopping list and provide a concise, focused summary that highlights:
+
+        1. Key Food Patterns (2-3 sentences):
+        - Main food categories purchased
+        - Notable dietary preferences or restrictions
+        - Any clear patterns in food choices
+
+        2. Household Insights (1-2 sentences):
+        - Likely household composition
+        - Meal preparation style
+        - Shopping habits (e.g., bulk buying, store brands)
+
+        3. Quick Recommendations (1-2 sentences):
+        - One specific strength in their shopping choices
+        - One practical suggestion for improvement
+
+        Keep the entire summary under 150 words. Use a supportive, clear tone. Only reference items that are clearly visible in the shopping list.
+
         Master Shop Record:
         {cleaned_items_output}
         """
