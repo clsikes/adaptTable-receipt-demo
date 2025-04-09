@@ -44,6 +44,8 @@ if "analysis_complete" not in st.session_state:
     st.session_state.analysis_complete = False
 if "cleaned_items_output" not in st.session_state:
     st.session_state.cleaned_items_output = None
+if "current_step" not in st.session_state:
+    st.session_state.current_step = "upload"
 
 # --- Helper Function: Extract all store blocks from markdown table ---
 def extract_all_store_blocks(parsed_text):
@@ -130,11 +132,13 @@ if st.session_state.uploaded_receipts:
     """)
     
     proceed = st.button("✅ I'm Ready – Analyze My Shopping Data")
+    if proceed:
+        st.session_state.current_step = "analysis"
 else:
     proceed = False
 
 # --- Combined Text Extraction and Analysis ---
-if proceed:
+if st.session_state.current_step == "analysis":
     combined_text = ""
 
     for uploaded_file in st.session_state.uploaded_receipts:
@@ -324,11 +328,7 @@ Your Output: Write a narrative snapshot that begins with "This household..."
         
         # Continue button
         if st.button("➡️ Continue to Food Guidance", key="continue_button"):
-            # Set the session state variables directly
-            st.session_state.analysis_complete = True
-            st.session_state.show_helps_hinders = True
             st.session_state.current_step = "helps_hinders"
-            # Use rerun to refresh the page
             st.experimental_rerun()
 
     except Exception as e:
@@ -336,7 +336,7 @@ Your Output: Write a narrative snapshot that begins with "This household..."
         st.exception(e)
 
 # --- Helps/Hinders Section ---
-if st.session_state.get('show_helps_hinders', False):
+if st.session_state.current_step == "helps_hinders":
     st.subheader("🎯 What Helps or Hinders Your Food Choices?")
     try:
         st.markdown("### 🍽️ How Your Foods May Impact Blood Sugar")
