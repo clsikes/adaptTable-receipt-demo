@@ -270,10 +270,9 @@ if st.session_state.current_step == "analysis":
                 cleaned_items_output = response.choices[0].message.content
             elif model_choice == "Google Gemini 2.5":
                 model = genai.GenerativeModel('gemini-2.5-pro')
-                response = model.generate_content([
-                    {"role": "system", "content": system_prompt_receipt_parser},
-                    {"role": "user", "content": user_prompt_receipt_parser}
-                ])
+                response = model.generate_content(
+                    f"{system_prompt_receipt_parser}\n\n{user_prompt_receipt_parser}"
+                )
                 cleaned_items_output = response.text
             
             end_time = time.time()
@@ -370,10 +369,9 @@ if st.session_state.current_step == "analysis":
             pen_portrait_output = pen_portrait_response.choices[0].message.content
         elif model_choice == "Google Gemini 2.5":
             model = genai.GenerativeModel('gemini-2.5-pro')
-            response = model.generate_content([
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": pen_portrait_prompt}
-            ])
+            response = model.generate_content(
+                f"{system_message}\n\n{pen_portrait_prompt}"
+            )
             pen_portrait_output = response.text
         
         end_time = time.time()
@@ -537,10 +535,9 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
             helps_hinders_output = response.choices[0].message.content
         elif model_choice == "Google Gemini 2.5":
             model = genai.GenerativeModel('gemini-2.5-pro')
-            response = model.generate_content([
-                {"role": "system", "content": "You are a registered dietitian specializing in diabetes management."},
-                {"role": "user", "content": helps_hinders_prompt}
-            ])
+            response = model.generate_content(
+                f"You are a registered dietitian specializing in diabetes management.\n\n{helps_hinders_prompt}"
+            )
             helps_hinders_output = response.text
         
         end_time = time.time()
