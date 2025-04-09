@@ -322,17 +322,20 @@ if proceed:
             key="summary_response"
         )
 
-        # Handle correction input if response is not "Yes, mostly accurate"
-        if response != "✅ Yes, mostly accurate":
-            st.info("Oops! We sometimes make mistakes. Do you have a sec to tell us what's off so we can improve?")
-            correction_text = st.text_area("Optional: Tell us what's off", placeholder="E.g., 'We don't have kids' or 'We cook more than it says.'")
-            st.caption("⏭️ No worries if you don't have time — you'll get a chance to confirm and correct details in the next step.")
+        # Only show correction fields if user has selected an option
+        if st.session_state.summary_response is not None:
+            # Handle correction input if response is not "Yes, mostly accurate"
+            if st.session_state.summary_response != "✅ Yes, mostly accurate":
+                st.info("Oops! We sometimes make mistakes. Do you have a sec to tell us what's off so we can improve?")
+                correction_text = st.text_area("Optional: Tell us what's off", placeholder="E.g., 'We don't have kids' or 'We cook more than it says.'")
+                st.caption("⏭️ No worries if you don't have time — you'll get a chance to confirm and correct details in the next step.")
         
         # Continue button with single callback
-        if st.button("➡️ Continue to Food Guidance", key="continue_button", on_click=on_continue_click):
-            # Ensure analysis_complete and show_helps_hinders are set
+        if st.button("➡️ Continue to Food Guidance", key="continue_button"):
+            # Set the session state variables directly
             st.session_state.analysis_complete = True
             st.session_state.show_helps_hinders = True
+            # Use rerun to refresh the page
             st.experimental_rerun()
 
     except Exception as e:
