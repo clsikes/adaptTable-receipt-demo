@@ -567,32 +567,24 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
             "<h3 style='font-size: 1.5rem; color: #1565c0;'>💡 Top Tips for Blood Sugar Stability</h3>"
         )
         
-        # Create containers for progressive loading
-        helpful_container = st.container()
-        challenging_container = st.container()
+        # Store the formatted sections in session state for progressive loading
+        if "helpful_section" not in st.session_state:
+            st.session_state.helpful_section = formatted_helpful
+            st.session_state.challenging_section = formatted_challenging
+            st.session_state.show_challenging = False
         
-        # Display helpful foods immediately in the first container
-        with helpful_container:
-            st.markdown(formatted_helpful, unsafe_allow_html=True)
+        # Display helpful foods immediately
+        st.markdown(st.session_state.helpful_section, unsafe_allow_html=True)
         
-        # Use a placeholder for the challenging foods section
-        with challenging_container:
-            # Create a placeholder for the challenging foods
-            challenging_placeholder = st.empty()
-            
-            # Show loading indicator
-            with st.spinner("⏳ Analyzing challenging foods..."):
-                # Use a callback to update the placeholder after a short delay
-                def update_challenging():
-                    challenging_placeholder.markdown(formatted_challenging, unsafe_allow_html=True)
-                
-                # Use Streamlit's rerun mechanism to create a delay
-                if "challenging_loaded" not in st.session_state:
-                    st.session_state.challenging_loaded = False
-                    st.rerun()
-                else:
-                    update_challenging()
-                    st.session_state.challenging_loaded = False
+        # Add a button to show challenging foods
+        if not st.session_state.show_challenging:
+            if st.button("Show Challenging Foods and Tips"):
+                st.session_state.show_challenging = True
+                st.rerun()
+        
+        # Display challenging foods when the button is clicked
+        if st.session_state.show_challenging:
+            st.markdown(st.session_state.challenging_section, unsafe_allow_html=True)
         
         # Display processing time
         st.info(f"Total processing time: {processing_time:.2f} seconds")
