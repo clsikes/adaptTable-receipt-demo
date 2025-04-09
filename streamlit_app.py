@@ -307,10 +307,6 @@ if proceed:
         # --- Household Summary Verification ---
         st.subheader("📋 Does this sound like your household?")
         
-        # Initialize summary_response in session state if not present
-        if "summary_response" not in st.session_state:
-            st.session_state.summary_response = None
-        
         # Create the radio button
         response = st.radio(
             label="Please select an option",
@@ -322,15 +318,13 @@ if proceed:
             key="summary_response"
         )
 
-        # Only show correction fields if user has selected an option
-        if st.session_state.summary_response is not None:
-            # Handle correction input if response is not "Yes, mostly accurate"
-            if st.session_state.summary_response != "✅ Yes, mostly accurate":
-                st.info("Oops! We sometimes make mistakes. Do you have a sec to tell us what's off so we can improve?")
-                correction_text = st.text_area("Optional: Tell us what's off", placeholder="E.g., 'We don't have kids' or 'We cook more than it says.'")
-                st.caption("⏭️ No worries if you don't have time — you'll get a chance to confirm and correct details in the next step.")
+        # Handle correction input if response is not "Yes, mostly accurate"
+        if response != "✅ Yes, mostly accurate":
+            st.info("Oops! We sometimes make mistakes. Do you have a sec to tell us what's off so we can improve?")
+            correction_text = st.text_area("Optional: Tell us what's off", placeholder="E.g., 'We don't have kids' or 'We cook more than it says.'")
+            st.caption("⏭️ No worries if you don't have time — you'll get a chance to confirm and correct details in the next step.")
         
-        # Continue button with single callback
+        # Continue button
         if st.button("➡️ Continue to Food Guidance", key="continue_button"):
             # Set the session state variables directly
             st.session_state.analysis_complete = True
