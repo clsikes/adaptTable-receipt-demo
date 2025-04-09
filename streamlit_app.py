@@ -23,6 +23,7 @@ except:
     GOOGLE_VISION_API_KEY = secrets["google_api_key"]
     OPENAI_API_KEY = secrets["openai_api_key"]
 
+# Initialize OpenAI client with API key
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 # --- Initialize Session State ---
@@ -36,6 +37,8 @@ if "household_summary" not in st.session_state:
     st.session_state.household_summary = None
 if "analysis_complete" not in st.session_state:
     st.session_state.analysis_complete = False
+if "cleaned_items_output" not in st.session_state:
+    st.session_state.cleaned_items_output = None
 
 # --- Helper Function: Extract all store blocks from markdown table ---
 def extract_all_store_blocks(parsed_text):
@@ -230,6 +233,7 @@ if proceed:
 
             cleaned_items_output = response.choices[0].message.content
             st.session_state.master_record = cleaned_items_output
+            st.session_state.cleaned_items_output = cleaned_items_output  # Store in session state
             
             st.markdown("### 🧾 Your Master Shopping Record")
 
@@ -283,7 +287,7 @@ if proceed:
         Write a short, specific summary that reflects this household's current shopping patterns. Use an empathetic tone, but prioritize clarity, usefulness, and behavioral insight. If relevant, comment on strengths and possible areas for improvement in a way that helps the household feel understood and supported. Do not mention any item that wasn't clearly extracted or expanded.
         
         Master Shop Record:
-        {cleaned_items_output}
+        {st.session_state.cleaned_items_output}
         """
         system_message = "You are a registered dietitian. Base your summary on Raw Item names, using Expansion only when it improves clarity. Do not use expansions marked Ambiguous."
 
