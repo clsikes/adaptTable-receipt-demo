@@ -265,7 +265,7 @@ if st.session_state.current_step == "analysis":
                 )
                 cleaned_items_output = response.choices[0].message.content
             elif model_choice == "Google Gemini 2.5":
-                model = genai.GenerativeModel('gemini-pro')
+                model = genai.GenerativeModel('gemini-2.5-pro-preview-03-25')
                 response = model.generate_content(
                     f"{system_prompt_receipt_parser}\n\n{user_prompt_receipt_parser}"
                 )
@@ -364,7 +364,7 @@ if st.session_state.current_step == "analysis":
             )
             pen_portrait_output = pen_portrait_response.choices[0].message.content
         elif model_choice == "Google Gemini 2.5":
-            model = genai.GenerativeModel('gemini-pro')
+            model = genai.GenerativeModel('gemini-2.5-pro-preview-03-25')
             response = model.generate_content(
                 f"{system_message}\n\n{pen_portrait_prompt}"
             )
@@ -530,7 +530,7 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
             )
             helps_hinders_output = response.choices[0].message.content
         elif model_choice == "Google Gemini 2.5":
-            model = genai.GenerativeModel('gemini-pro')
+            model = genai.GenerativeModel('gemini-2.5-pro-preview-03-25')
             response = model.generate_content(
                 f"You are a registered dietitian specializing in diabetes management.\n\n{helps_hinders_prompt}"
             )
