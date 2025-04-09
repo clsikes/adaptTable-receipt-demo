@@ -260,24 +260,28 @@ if proceed:
         st.subheader("💡 Summary of Your Shopping Habits")
 
         pen_portrait_prompt = f"""
-        You are a registered dietitian analyzing a household's grocery shopping patterns. Review the shopping list and provide a concise, focused summary that highlights:
-
-        1. Key Food Patterns (2-3 sentences):
-        - Main food categories purchased
-        - Notable dietary preferences or restrictions
-        - Any clear patterns in food choices
-
-        2. Household Insights (1-2 sentences):
-        - Likely household composition
-        - Meal preparation style
-        - Shopping habits (e.g., bulk buying, store brands)
-
-        3. Quick Recommendations (1-2 sentences):
-        - One specific strength in their shopping choices
-        - One practical suggestion for improvement
-
-        Keep the entire summary under 150 words. Use a supportive, clear tone. Only reference items that are clearly visible in the shopping list.
-
+        You are a registered dietitian who specializes in empowering households to understand and improve their food choices. You are reviewing the output of a tool that converts a grocery receipt into a structured list of items. Each item may include a short name and, when possible, a longer expansion. You are creating a patient-facing summary to help the user understand their shopping habits and identify opportunities for improvement. The tone should be supportive but not overly positive — focus on clear, specific insights rooted in evidence and behavioral observation.
+        
+        Step 1: Review Input Format
+        You are provided with a list of grocery items purchased by a household. Each row contains a raw item name and, when available, a confident expansion. Use both fields when identifying trends, favoring the expansion when it offers more clarity. Do not make assumptions based on items that are unclear or ambiguous.
+        
+        Step 2: Identify and Analyze Shopping Patterns
+        Analyze shopping patterns based solely on the visible item names and expansions. Do not rely on any internal food database. Instead, use commonsense knowledge and observable trends. Where appropriate, cite examples from the list. Analyze for the following:
+        
+        - ✅ Recurring food categories, such as proteins, grains, snacks, dairy, beverages, sweets, condiments, or frozen meals. Name the categories only if there are multiple examples.
+        - ✅ Household size & composition, if inferable (e.g., kids, adults, multiple dietary needs).
+        - ✅ Meal preparation habits, such as reliance on convenience items vs. ingredients for home-cooked meals.
+        - ✅ Spending habits, such as bulk items, store brands, or premium brands.
+        - ✅ Dietary preferences or restrictions, such as gluten-free, low-carb, vegetarian, etc.
+        - ✅ Brand preferences, if certain brands appear multiple times.
+        - ✅ Lifestyle indicators, such as a busy or social household — include only if confident based on 3+ distinct items (≥60% confidence).
+        - ✅ Unexpected or culturally specific patterns, like repeated purchases of a specific spice, dish, or ingredient type.
+        
+        Cite only patterns that are clearly supported by the data. Avoid vague or overly positive generalizations.
+        
+        Step 3: Write the Patient Summary
+        Write a short, specific summary that reflects this household's current shopping patterns. Use an empathetic tone, but prioritize clarity, usefulness, and behavioral insight. If relevant, comment on strengths and possible areas for improvement in a way that helps the household feel understood and supported. Do not mention any item that wasn't clearly extracted or expanded.
+        
         Master Shop Record:
         {cleaned_items_output}
         """
@@ -357,20 +361,29 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
         For each food that supports blood sugar control (low-GI, high-fiber, high-protein, or rich in healthy fats):
         - List at least 5-7 items from their shopping list
         - Use appropriate food icons (🥑 for avocado, 🥛 for milk, 🥬 for vegetables, etc.)
-        - Format each item as:
+        - Format each item EXACTLY as follows with double line breaks between items:
           **🥑 Food Item:** [name]  
+          
           **✅ Why It's Great for Blood Sugar Control:** [clear, evidence-based explanation]  
+          
           **🍽️ How to Use It:** [practical, specific suggestions]
+          
+          [Double line break before next item]
 
         ⚠️ CHALLENGING FOODS
         For each food that may hinder blood sugar control (high-GI, refined carbs, low fiber, low protein, or high in added sugar):
         - List at least 5-7 items from their shopping list
         - Use appropriate food icons (🍞 for bread, 🍪 for cookies, 🥤 for sugary drinks, etc.)
-        - Format each item as:
-          ** Food Item:** [name]  
+        - Format each item EXACTLY as follows with double line breaks between items:
+          **[icon] Food Item:** [name]  
+          
           **❌ Why It May Challenge Control:** [clear, evidence-based explanation]  
+          
           **✅ Try Instead:** [specific alternative with better glycemic profile]  
-          **🔄 Adaptation Tip:** Suggest how to still use or enjoy this food with adjustments (e.g., pairing with protein, changing timing, reducing portion)
+          
+          **🔄 Adaptation Tip:** [suggestion for adjustments]
+          
+          [Double line break before next item]
 
         STEP 3: Include Fixed Top Tips Section
         Always include these specific tips, personalizing only the bracketed examples with items from their shopping list:
@@ -418,6 +431,7 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
         - Do not show the steps or internal structure to the user
         - Maintain the exact wording of the top tips section, only personalizing the bracketed examples
         - Use the exact wording for the Adaptation Tip as specified
+        - IMPORTANT: Use double line breaks between each food item to ensure proper formatting
 
         Master Shop Record:
         {st.session_state.master_record}
