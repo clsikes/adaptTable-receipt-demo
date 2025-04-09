@@ -268,49 +268,21 @@ if proceed:
     try:
         st.subheader("💡 Summary of Your Shopping Habits")
 
-        pen_portrait_prompt = f"""
-        You are a registered dietitian who specializes in empowering households to understand and improve their food choices. You are reviewing the output of a tool that converts a grocery receipt into a structured list of items. Each item may include a short name and, when possible, a longer expansion. You are creating a patient-facing summary to help the user understand their shopping habits and identify opportunities for improvement. The tone should be supportive but not overly positive — focus on clear, specific insights rooted in evidence and behavioral observation.
+        # Extract store name and receipt date from the master record
+        store_name = "Unknown Store"
+        receipt_date = "Unknown Date"
         
-        Step 1: Review Input Format
-        You are provided with a list of grocery items purchased by a household. Each row contains a raw item name and, when available, a confident expansion. Use both fields when identifying trends, favoring the expansion when it offers more clarity. Do not make assumptions based on items that are unclear or ambiguous.
-        
-        Step 2: Identify and Analyze Shopping Patterns
-        Analyze shopping patterns based solely on the visible item names and expansions. Do not rely on any internal food database. Instead, use commonsense knowledge and observable trends. Where appropriate, cite examples from the list. Analyze for the following:
-        
-        - ✅ Recurring food categories, such as proteins, grains, snacks, dairy, beverages, sweets, condiments, or frozen meals. Name the categories only if there are multiple examples.
-        - ✅ Household size & composition, if inferable (e.g., kids, adults, multiple dietary needs).
-        - ✅ Meal preparation habits, such as reliance on convenience items vs. ingredients for home-cooked meals.
-        - ✅ Spending habits, such as bulk items, store brands, or premium brands.
-        - ✅ Dietary preferences or restrictions, such as gluten-free, low-carb, vegetarian, etc.
-        - ✅ Brand preferences, if certain brands appear multiple times.
-        - ✅ Lifestyle indicators, such as a busy or social household — include only if confident based on 3+ distinct items (≥60% confidence).
-        - ✅ Unexpected or culturally specific patterns, like repeated purchases of a specific spice, dish, or ingredient type.
-        
-        Cite only patterns that are clearly supported by the data. Avoid vague or overly positive generalizations.
-        
-        Step 3: Write the Patient Summary
-        Write a short, specific summary that reflects this household's current shopping patterns. Use an empathetic tone, but prioritize clarity, usefulness, and behavioral insight. If relevant, comment on strengths and possible areas for improvement in a way that helps the household feel understood and supported. Do not mention any item that wasn't clearly extracted or expanded.
-        
-        Master Shop Record:
-        {st.session_state.cleaned_items_output}
-        """
-        system_message = "You are a registered dietitian. Base your summary on Raw Item names, using Expansion only when it improves clarity. Do not use expansions marked Ambiguous."
-
-        pen_portrait_response = client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": pen_portrait_prompt}
-            ]
-        )
-
-        pen_portrait_output = pen_portrait_response.choices[0].message.content
-        st.session_state.household_summary = pen_portrait_output
-
-        st.markdown(pen_portrait_output)
-
-        # --- Household Narrative Summary ---
-        st.subheader("📋 Household Narrative Summary")
+        # Try to extract store name and date from the master record
+        if cleaned_items_output:
+            # Look for store name pattern
+            store_lines = [line for line in cleaned_items_output.split('\n') if "Store Name:" in line]
+            if store_lines:
+                store_name = store_lines[0].split("Store Name:")[1].strip()
+            
+            # Look for date pattern
+            date_lines = [line for line in cleaned_items_output.split('\n') if "Date:" in line]
+            if date_lines:
+                receipt_date = date_lines[0].split("Date:")[1].strip()
         
         # Generate the household narrative summary
         pen_portrait_prompt = f"""
@@ -334,11 +306,18 @@ You are a registered dietitian with deep expertise in behavioral nutrition. You'
 Your Output: Write a narrative snapshot that begins with "This household..."
 """
         
-        # Generate the household narrative summary
-        household_summary = generate_household_summary(pen_portrait_prompt)
-        
-        # Display the household narrative summary
-        st.markdown(household_summary)
+        pen_portrait_response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a registered dietitian. Base your summary on Raw Item names, using Expansion only when it improves clarity. Do not use expansions marked Ambiguous."},
+                {"role": "user", "content": pen_portrait_prompt}
+            ]
+        )
+
+        pen_portrait_output = pen_portrait_response.choices[0].message.content
+        st.session_state.household_summary = pen_portrait_output
+
+        st.markdown(pen_portrait_output)
         
         # Add a message about the summary
         st.info("The things in our shopping carts can tell us a lot about a household, but not everything. If this doesn't sound like you don't worry - we will get detailed information about your HH at a later step.")
