@@ -307,6 +307,7 @@ if proceed:
         if "summary_response" not in st.session_state:
             st.session_state.summary_response = None
         
+        # Create the radio button
         response = st.radio(
             label="Please select an option",
             options=[
@@ -317,11 +318,8 @@ if proceed:
             key="summary_response"
         )
 
-        # Store the response in session state
-        st.session_state.summary_response = response
-
         # Handle correction input if response is not "Yes, mostly accurate"
-        if st.session_state.summary_response != "✅ Yes, mostly accurate":
+        if response != "✅ Yes, mostly accurate":
             st.info("Oops! We sometimes make mistakes. Do you have a sec to tell us what's off so we can improve?")
             correction_text = st.text_area("Optional: Tell us what's off", placeholder="E.g., 'We don't have kids' or 'We cook more than it says.'")
             st.caption("⏭️ No worries if you don't have time — you'll get a chance to confirm and correct details in the next step.")
