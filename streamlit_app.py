@@ -399,10 +399,8 @@ if st.session_state.current_step == "analysis":
 
 # --- Helps / Hinders GPT Analysis Block ---
 if st.session_state.analysis_complete and st.session_state.show_helps_hinders and st.session_state.master_record:
-    st.subheader("🎯 What Helps or Hinders Your Food Choices?")
+    st.subheader("🍽️ How Your Foods May Impact Blood Sugar")
     try:
-        st.markdown("### 🍽️ How Your Foods May Impact Blood Sugar")
-        
         helps_hinders_prompt = f"""
         🧠 ROLE:
         You are a registered dietitian helping a household understand how their recent grocery purchases may affect blood sugar control for someone managing Type 1 Diabetes (T1D).
@@ -489,8 +487,6 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
         **🧘‍♀️ Sleep & Stress Matter**  
         Poor sleep and stress can raise blood sugar. Prioritize rest and find calming rituals like yoga, walking, or mindfulness.
 
-        ---
-
         ✅ RULES:
         - Never make up food items
         - Do not give medical advice or suggest medication
@@ -507,7 +503,7 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
         Master Shop Record:
         {st.session_state.master_record}
         """
-        
+
         # Process with selected model
         start_time = time.time()
         
@@ -545,11 +541,22 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
         
         st.session_state.processing_times["helps_hinders"][model_choice] = processing_time
         
+        # Split the output into sections for progressive loading
+        sections = helps_hinders_output.split("⚠️ CHALLENGING FOODS")
+        if len(sections) == 2:
+            helpful_section = sections[0]
+            challenging_section = "⚠️ CHALLENGING FOODS" + sections[1]
+        else:
+            helpful_section = helps_hinders_output
+            challenging_section = ""
+        
         # Format the output to make headers larger
-        formatted_output = helps_hinders_output.replace(
+        formatted_helpful = helpful_section.replace(
             "✅ HELPFUL FOODS", 
             "<h3 style='font-size: 1.5rem; color: #2e7d32;'>✅ HELPFUL FOODS</h3>"
-        ).replace(
+        )
+        
+        formatted_challenging = challenging_section.replace(
             "⚠️ CHALLENGING FOODS", 
             "<h3 style='font-size: 1.5rem; color: #c62828;'>⚠️ CHALLENGING FOODS</h3>"
         ).replace(
@@ -557,10 +564,16 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
             "<h3 style='font-size: 1.5rem; color: #1565c0;'>💡 Top Tips for Blood Sugar Stability</h3>"
         )
         
-        st.markdown(formatted_output, unsafe_allow_html=True)
+        # Display helpful foods immediately
+        st.markdown(formatted_helpful, unsafe_allow_html=True)
+        
+        # Show loading indicator for challenging foods
+        with st.spinner("⏳ Analyzing challenging foods..."):
+            # Display challenging foods
+            st.markdown(formatted_challenging, unsafe_allow_html=True)
         
         # Display processing time
-        st.info(f"Processing time: {processing_time:.2f} seconds")
+        st.info(f"Total processing time: {processing_time:.2f} seconds")
 
     except Exception as e:
         st.error("There was a problem generating the food guidance.")
