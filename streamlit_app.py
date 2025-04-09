@@ -307,30 +307,34 @@ if proceed:
         # --- Household Summary Verification ---
         st.subheader("📋 Does this sound like your household?")
         
-        # Create the radio button
-        response = st.radio(
-            label="Please select an option",
-            options=[
-                "✅ Yes, mostly accurate",
-                "✏️ A few things are off",
-                "❌ Not accurate at all"
-            ],
-            key="summary_response"
-        )
-
-        # Handle correction input if response is not "Yes, mostly accurate"
-        if response != "✅ Yes, mostly accurate":
-            st.info("Oops! We sometimes make mistakes. Do you have a sec to tell us what's off so we can improve?")
-            correction_text = st.text_area("Optional: Tell us what's off", placeholder="E.g., 'We don't have kids' or 'We cook more than it says.'")
-            st.caption("⏭️ No worries if you don't have time — you'll get a chance to confirm and correct details in the next step.")
-        
-        # Continue button
-        if st.button("➡️ Continue to Food Guidance", key="continue_button"):
-            # Set the session state variables directly
-            st.session_state.analysis_complete = True
-            st.session_state.show_helps_hinders = True
-            # Use rerun to refresh the page
-            st.experimental_rerun()
+        # Use a form to prevent page reloads
+        with st.form(key="summary_form"):
+            # Create the radio button inside the form
+            response = st.radio(
+                label="Please select an option",
+                options=[
+                    "✅ Yes, mostly accurate",
+                    "✏️ A few things are off",
+                    "❌ Not accurate at all"
+                ],
+                key="summary_response"
+            )
+            
+            # Handle correction input if response is not "Yes, mostly accurate"
+            if response != "✅ Yes, mostly accurate":
+                st.info("Oops! We sometimes make mistakes. Do you have a sec to tell us what's off so we can improve?")
+                correction_text = st.text_area("Optional: Tell us what's off", placeholder="E.g., 'We don't have kids' or 'We cook more than it says.'")
+                st.caption("⏭️ No worries if you don't have time — you'll get a chance to confirm and correct details in the next step.")
+            
+            # Continue button inside the form
+            submit_button = st.form_submit_button("➡️ Continue to Food Guidance")
+            
+            if submit_button:
+                # Set the session state variables directly
+                st.session_state.analysis_complete = True
+                st.session_state.show_helps_hinders = True
+                # Use rerun to refresh the page
+                st.experimental_rerun()
 
     except Exception as e:
         st.error("There was a problem generating the Household Profile.")
