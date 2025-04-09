@@ -5,6 +5,8 @@ import requests
 import streamlit.components.v1 as components
 import os
 import toml
+import time
+import google.generativeai as genai
 
 # --- Callback Function ---
 def on_continue_click():
@@ -21,15 +23,18 @@ try:
     # Try to load from Streamlit Cloud secrets first
     GOOGLE_VISION_API_KEY = st.secrets["google_api_key"]
     OPENAI_API_KEY = st.secrets["openai_api_key"]
+    GOOGLE_AI_API_KEY = st.secrets["google_ai_api_key"]  # Add this for Gemini
 except:
     # Fallback to local secrets.toml for development
     secrets_path = os.path.join(os.path.dirname(__file__), "config", "secrets.toml")
     secrets = toml.load(secrets_path)
     GOOGLE_VISION_API_KEY = secrets["google_api_key"]
     OPENAI_API_KEY = secrets["openai_api_key"]
+    GOOGLE_AI_API_KEY = secrets["google_ai_api_key"]  # Add this for Gemini
 
-# Initialize OpenAI client with API key
+# Initialize clients
 client = OpenAI(api_key=OPENAI_API_KEY)
+genai.configure(api_key=GOOGLE_AI_API_KEY)
 
 # --- Initialize Session State ---
 if "uploaded_receipts" not in st.session_state:
@@ -46,6 +51,16 @@ if "cleaned_items_output" not in st.session_state:
     st.session_state.cleaned_items_output = None
 if "current_step" not in st.session_state:
     st.session_state.current_step = "upload"
+if "processing_times" not in st.session_state:
+    st.session_state.processing_times = {}
+
+# --- Model Selection ---
+st.sidebar.title("Model Selection")
+model_choice = st.sidebar.selectbox(
+    "Select Model",
+    ["OpenAI GPT-4", "OpenAI GPT-3.5-Turbo", "Google Gemini 2.5"],
+    index=0
+)
 
 # --- Helper Function: Extract all store blocks from markdown table ---
 def extract_all_store_blocks(parsed_text):
@@ -70,13 +85,13 @@ def extract_all_store_blocks(parsed_text):
                 if raw.lower() != "raw item":
                     current_items.append(raw)
         elif not line and current_store and current_items:
-            blocks.append((current_store, "\n".join(current_items)))
+            blocks.append((current_store, current_items))
             current_store = None
             current_items = []
 
     # Catch final block
     if current_store and current_items:
-        blocks.append((current_store, "\n".join(current_items)))
+        blocks.append((current_store, current_items))
 
     return blocks
 
@@ -90,9 +105,9 @@ st.markdown(
 st.markdown("""
 ### 👋 Welcome to AdaptTable – your household health co-pilot
 
-I'm here to make improving your household's health through food easier, more achievable, and more acceptable for everyone in your household (yes, even you—Seafood-Skeptic-of-the-Deep 🐟🙅‍♂️).
+I'm here to make improving your household's health through food easier, more achievable, and more acceptable for everyone (yes, even you—Seafood-Skeptic-of-the-Deep 🐟🙅‍♂️).
 
-Learning how to use food as medicine - to manage a health condition, or simply improve your overall health, can feel overwhelming:
+Learning how to manage a health condition—or simply eat better—can feel overwhelming:
 - 🤔 *How am I doing with my current diet?*  
 - 🔄 *What exactly needs to change?*  
 - 👨‍👩‍👧 *How do I make changes that my whole household will actually accept?*
@@ -173,7 +188,7 @@ if st.session_state.current_step == "analysis":
     # --- Show All Raw Combined Text ---
     st.text_area("📝 Combined Receipt Text", combined_text, height=250)
 
-    with st.spinner("⏳ Analyzing your grocery receipts... This may take 20–30 seconds."):
+    with st.spinner(f"⏳ Analyzing your grocery receipts with {model_choice}... This may take 20–30 seconds."):
         try:
             st.subheader("Generating Master Shopping Record...")
 
@@ -232,17 +247,46 @@ if st.session_state.current_step == "analysis":
             {combined_text}
             """
 
-            response = client.chat.completions.create(
-                model="gpt-4",
-                messages=[
+            # Process with selected model
+            start_time = time.time()
+            
+            if model_choice == "OpenAI GPT-4":
+                response = client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": system_prompt_receipt_parser},
+                        {"role": "user", "content": user_prompt_receipt_parser}
+                    ]
+                )
+                cleaned_items_output = response.choices[0].message.content
+            elif model_choice == "OpenAI GPT-3.5-Turbo":
+                response = client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": system_prompt_receipt_parser},
+                        {"role": "user", "content": user_prompt_receipt_parser}
+                    ]
+                )
+                cleaned_items_output = response.choices[0].message.content
+            elif model_choice == "Google Gemini 2.5":
+                model = genai.GenerativeModel('gemini-2.5-pro')
+                response = model.generate_content([
                     {"role": "system", "content": system_prompt_receipt_parser},
                     {"role": "user", "content": user_prompt_receipt_parser}
-                ]
-            )
-
-            cleaned_items_output = response.choices[0].message.content
+                ])
+                cleaned_items_output = response.text
+            
+            end_time = time.time()
+            processing_time = end_time - start_time
+            
+            # Store the processing time
+            if "receipt_parsing" not in st.session_state.processing_times:
+                st.session_state.processing_times["receipt_parsing"] = {}
+            
+            st.session_state.processing_times["receipt_parsing"][model_choice] = processing_time
+            
             st.session_state.master_record = cleaned_items_output
-            st.session_state.cleaned_items_output = cleaned_items_output  # Store in session state
+            st.session_state.cleaned_items_output = cleaned_items_output
             
             st.markdown("### 🧾 Your Master Shopping Record")
 
@@ -255,6 +299,9 @@ if st.session_state.current_step == "analysis":
                 height=350,
                 scrolling=True
             )
+            
+            # Display processing time
+            st.info(f"Processing time: {processing_time:.2f} seconds")
 
             # --- Extract Raw Items Only (for LLM use) ---
             store_blocks = extract_all_store_blocks(cleaned_items_output)
@@ -272,56 +319,78 @@ if st.session_state.current_step == "analysis":
     try:
         st.subheader("💡 Summary of Your Shopping Habits")
 
-        # Extract store name and receipt date from the master record
-        store_name = "Unknown Store"
-        receipt_date = "Unknown Date"
-        
-        # Try to extract store name and date from the master record
-        if cleaned_items_output:
-            # Look for store name pattern
-            store_lines = [line for line in cleaned_items_output.split('\n') if "Store Name:" in line]
-            if store_lines:
-                store_name = store_lines[0].split("Store Name:")[1].strip()
-            
-            # Look for date pattern
-            date_lines = [line for line in cleaned_items_output.split('\n') if "Date:" in line]
-            if date_lines:
-                receipt_date = date_lines[0].split("Date:")[1].strip()
-        
-        # Generate the household narrative summary
         pen_portrait_prompt = f"""
-You are a registered dietitian with deep expertise in behavioral nutrition. You're writing a short narrative summary for a household based on their grocery purchases. This summary is shown directly to the household and is meant to help them feel understood while sparking curiosity about their food patterns.
-
-🎯 GOAL: Generate a 3–5 sentence **narrative snapshot** of this household's food behaviors, cooking habits, and nutritional tendencies, using the grocery list as your only input. This is not a clinical assessment — it's an insightful, pattern-based reflection to build trust and interest.
-
-✅ KEY TASKS:
-1. Identify **visible patterns** — repeat food types, known brands, pack sizes, cooking complexity, kid-friendly or time-saving items, etc.
-2. Draw **behavioral conclusions** — about household size, time constraints, health focus (or lack of), flavor/cultural leanings, or economic choices.
-3. Include **2–3 specific clues or examples** from the list — don't be generic.
-4. Avoid clinical labeling, moral judgment, or sugarcoating. Be observant and empathetic, not overly positive.
-5. If the data is sparse or ambiguous, say that — and describe what can or can't be inferred.
-
-🔍 MASTER SHOP RECORD:
-{cleaned_items_output}
-
-🛒 Store: {store_name}
-🗓️ Most Recent Receipt Date: {receipt_date}
-
-Your Output: Write a narrative snapshot that begins with "This household..."
-"""
+        You are a registered dietitian who specializes in empowering households to understand and improve their food choices. You are reviewing the output of a tool that converts a grocery receipt into a structured list of items. Each item may include a short name and, when possible, a longer expansion. You are creating a patient-facing summary to help the user understand their shopping habits and identify opportunities for improvement. The tone should be supportive but not overly positive — focus on clear, specific insights rooted in evidence and behavioral observation.
         
-        pen_portrait_response = client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You are a registered dietitian. Base your summary on Raw Item names, using Expansion only when it improves clarity. Do not use expansions marked Ambiguous."},
-                {"role": "user", "content": pen_portrait_prompt}
-            ]
-        )
+        Step 1: Review Input Format
+        You are provided with a list of grocery items purchased by a household. Each row contains a raw item name and, when available, a confident expansion. Use both fields when identifying trends, favoring the expansion when it offers more clarity. Do not make assumptions based on items that are unclear or ambiguous.
+        
+        Step 2: Identify and Analyze Shopping Patterns
+        Analyze shopping patterns based solely on the visible item names and expansions. Do not rely on any internal food database. Instead, use commonsense knowledge and observable trends. Where appropriate, cite examples from the list. Analyze for the following:
+        
+        - ✅ Recurring food categories, such as proteins, grains, snacks, dairy, beverages, sweets, condiments, or frozen meals. Name the categories only if there are multiple examples.
+        - ✅ Household size & composition, if inferable (e.g., kids, adults, multiple dietary needs).
+        - ✅ Meal preparation habits, such as reliance on convenience items vs. ingredients for home-cooked meals.
+        - ✅ Spending habits, such as bulk items, store brands, or premium brands.
+        - ✅ Dietary preferences or restrictions, such as gluten-free, low-carb, vegetarian, etc.
+        - ✅ Brand preferences, if certain brands appear multiple times.
+        - ✅ Lifestyle indicators, such as a busy or social household — include only if confident based on 3+ distinct items (≥60% confidence).
+        - ✅ Unexpected or culturally specific patterns, like repeated purchases of a specific spice, dish, or ingredient type.
+        
+        Cite only patterns that are clearly supported by the data. Avoid vague or overly positive generalizations.
+        
+        Step 3: Write the Patient Summary
+        Write a short, specific summary that reflects this household's current shopping patterns. Use an empathetic tone, but prioritize clarity, usefulness, and behavioral insight. If relevant, comment on strengths and possible areas for improvement in a way that helps the household feel understood and supported. Do not mention any item that wasn't clearly extracted or expanded.
+        
+        Master Shop Record:
+        {cleaned_items_output}
+        """
+        system_message = "You are a registered dietitian. Base your summary on Raw Item names, using Expansion only when it improves clarity. Do not use expansions marked Ambiguous."
 
-        pen_portrait_output = pen_portrait_response.choices[0].message.content
+        # Process with selected model
+        start_time = time.time()
+        
+        if model_choice == "OpenAI GPT-4":
+            pen_portrait_response = client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": system_message},
+                    {"role": "user", "content": pen_portrait_prompt}
+                ]
+            )
+            pen_portrait_output = pen_portrait_response.choices[0].message.content
+        elif model_choice == "OpenAI GPT-3.5-Turbo":
+            pen_portrait_response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": system_message},
+                    {"role": "user", "content": pen_portrait_prompt}
+                ]
+            )
+            pen_portrait_output = pen_portrait_response.choices[0].message.content
+        elif model_choice == "Google Gemini 2.5":
+            model = genai.GenerativeModel('gemini-2.5-pro')
+            response = model.generate_content([
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": pen_portrait_prompt}
+            ])
+            pen_portrait_output = response.text
+        
+        end_time = time.time()
+        processing_time = end_time - start_time
+        
+        # Store the processing time
+        if "household_summary" not in st.session_state.processing_times:
+            st.session_state.processing_times["household_summary"] = {}
+        
+        st.session_state.processing_times["household_summary"][model_choice] = processing_time
+        
         st.session_state.household_summary = pen_portrait_output
 
         st.markdown(pen_portrait_output)
+        
+        # Display processing time
+        st.info(f"Processing time: {processing_time:.2f} seconds")
         
         # Add a message about the summary
         st.info("The things in our shopping carts can tell us a lot about a household, but not everything. If this doesn't sound like you don't worry - we will get detailed information about your HH at a later step.")
@@ -445,17 +514,70 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
         {st.session_state.master_record}
         """
         
-        response = client.chat.completions.create(
-            model="gpt-4",
-            messages=[
+        # Process with selected model
+        start_time = time.time()
+        
+        if model_choice == "OpenAI GPT-4":
+            response = client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are a registered dietitian specializing in diabetes management."},
+                    {"role": "user", "content": helps_hinders_prompt}
+                ]
+            )
+            helps_hinders_output = response.choices[0].message.content
+        elif model_choice == "OpenAI GPT-3.5-Turbo":
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are a registered dietitian specializing in diabetes management."},
+                    {"role": "user", "content": helps_hinders_prompt}
+                ]
+            )
+            helps_hinders_output = response.choices[0].message.content
+        elif model_choice == "Google Gemini 2.5":
+            model = genai.GenerativeModel('gemini-2.5-pro')
+            response = model.generate_content([
                 {"role": "system", "content": "You are a registered dietitian specializing in diabetes management."},
                 {"role": "user", "content": helps_hinders_prompt}
-            ]
+            ])
+            helps_hinders_output = response.text
+        
+        end_time = time.time()
+        processing_time = end_time - start_time
+        
+        # Store the processing time
+        if "helps_hinders" not in st.session_state.processing_times:
+            st.session_state.processing_times["helps_hinders"] = {}
+        
+        st.session_state.processing_times["helps_hinders"][model_choice] = processing_time
+        
+        # Format the output to make headers larger
+        formatted_output = helps_hinders_output.replace(
+            "✅ HELPFUL FOODS", 
+            "<h3 style='font-size: 1.5rem; color: #2e7d32;'>✅ HELPFUL FOODS</h3>"
+        ).replace(
+            "⚠️ CHALLENGING FOODS", 
+            "<h3 style='font-size: 1.5rem; color: #c62828;'>⚠️ CHALLENGING FOODS</h3>"
+        ).replace(
+            "💡 **Top Tips for Blood Sugar Stability**", 
+            "<h3 style='font-size: 1.5rem; color: #1565c0;'>💡 Top Tips for Blood Sugar Stability</h3>"
         )
         
-        helps_hinders_output = response.choices[0].message.content
-        st.markdown(helps_hinders_output)
+        st.markdown(formatted_output, unsafe_allow_html=True)
+        
+        # Display processing time
+        st.info(f"Processing time: {processing_time:.2f} seconds")
 
     except Exception as e:
         st.error("There was a problem generating the food guidance.")
         st.exception(e)
+
+# --- Performance Metrics ---
+if st.session_state.processing_times:
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("Performance Metrics")
+    for step, times in st.session_state.processing_times.items():
+        st.sidebar.markdown(f"**{step.replace('_', ' ').title()}:**")
+        for model, time_taken in times.items():
+            st.sidebar.markdown(f"- {model}: {time_taken:.2f} seconds")
