@@ -24,13 +24,9 @@ try:
     GOOGLE_VISION_API_KEY = st.secrets["google_api_key"]
     OPENAI_API_KEY = st.secrets["openai_api_key"]
     GOOGLE_AI_API_KEY = st.secrets["google_ai_api_key"]  # Add this for Gemini
-except:
-    # Fallback to local secrets.toml for development
-    secrets_path = os.path.join(os.path.dirname(__file__), "config", "secrets.toml")
-    secrets = toml.load(secrets_path)
-    GOOGLE_VISION_API_KEY = secrets["google_api_key"]
-    OPENAI_API_KEY = secrets["openai_api_key"]
-    GOOGLE_AI_API_KEY = secrets["google_ai_api_key"]  # Add this for Gemini
+except Exception as e:
+    st.error("Error loading secrets from Streamlit Cloud. Please ensure all API keys are configured in your Streamlit Cloud secrets.")
+    st.stop()
 
 # Initialize clients
 client = OpenAI(api_key=OPENAI_API_KEY)
