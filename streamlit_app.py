@@ -303,6 +303,10 @@ if proceed:
         # --- Household Summary Verification ---
         st.subheader("📋 Does this sound like your household?")
         
+        # Initialize summary_response in session state if not present
+        if "summary_response" not in st.session_state:
+            st.session_state.summary_response = None
+        
         response = st.radio(
             label="Please select an option",
             options=[
@@ -313,6 +317,9 @@ if proceed:
             key="summary_response"
         )
 
+        # Store the response in session state
+        st.session_state.summary_response = response
+
         # Handle correction input if response is not "Yes, mostly accurate"
         if st.session_state.summary_response != "✅ Yes, mostly accurate":
             st.info("Oops! We sometimes make mistakes. Do you have a sec to tell us what's off so we can improve?")
@@ -321,7 +328,10 @@ if proceed:
         
         # Continue button with single callback
         if st.button("➡️ Continue to Food Guidance", key="continue_button", on_click=on_continue_click):
-            pass
+            # Ensure analysis_complete and show_helps_hinders are set
+            st.session_state.analysis_complete = True
+            st.session_state.show_helps_hinders = True
+            st.experimental_rerun()
 
     except Exception as e:
         st.error("There was a problem generating the Household Profile.")
