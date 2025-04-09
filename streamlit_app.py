@@ -327,6 +327,7 @@ Your Output: Write a narrative snapshot that begins with "This household..."
             # Set the session state variables directly
             st.session_state.analysis_complete = True
             st.session_state.show_helps_hinders = True
+            st.session_state.current_step = "helps_hinders"
             # Use rerun to refresh the page
             st.experimental_rerun()
 
@@ -334,8 +335,9 @@ Your Output: Write a narrative snapshot that begins with "This household..."
         st.error("There was a problem generating the Household Profile.")
         st.exception(e)
 
-# --- Helps / Hinders GPT Analysis Block ---
-if st.session_state.analysis_complete and st.session_state.show_helps_hinders and st.session_state.master_record:
+# --- Helps/Hinders Section ---
+if st.session_state.get('show_helps_hinders', False):
+    st.subheader("🎯 What Helps or Hinders Your Food Choices?")
     try:
         st.markdown("### 🍽️ How Your Foods May Impact Blood Sugar")
         
