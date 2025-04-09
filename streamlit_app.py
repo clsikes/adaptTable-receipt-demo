@@ -80,9 +80,9 @@ st.markdown(
 st.markdown("""
 ### 👋 Welcome to AdaptTable – your household health co-pilot
 
-I'm here to make improving your household's health through food easier, more achievable, and more acceptable for everyone (yes, even you—Seafood-Skeptic-of-the-Deep 🐟🙅‍♂️).
+I'm here to make improving your household's health through food easier, more achievable, and more acceptable for everyone in your household (yes, even you—Seafood-Skeptic-of-the-Deep 🐟🙅‍♂️).
 
-Learning how to manage a health condition—or simply eat better—can feel overwhelming:
+Learning how to use food as medicine - to manage a health condition, or simply improve your overall health, can feel overwhelming:
 - 🤔 *How am I doing with my current diet?*  
 - 🔄 *What exactly needs to change?*  
 - 👨‍👩‍👧 *How do I make changes that my whole household will actually accept?*
