@@ -550,6 +550,9 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
             helpful_section = helps_hinders_output
             challenging_section = ""
         
+        # Remove the redundant header if it exists
+        helpful_section = helpful_section.replace("🎯 What Helps or Hinders Your Food Choices?", "")
+        
         # Format the output to make headers larger
         formatted_helpful = helpful_section.replace(
             "✅ HELPFUL FOODS", 
@@ -567,8 +570,13 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
         # Display helpful foods immediately
         st.markdown(formatted_helpful, unsafe_allow_html=True)
         
+        # Add a small delay to create the progressive loading effect
+        time.sleep(1)
+        
         # Show loading indicator for challenging foods
         with st.spinner("⏳ Analyzing challenging foods..."):
+            # Add another small delay to make the loading indicator visible
+            time.sleep(1)
             # Display challenging foods
             st.markdown(formatted_challenging, unsafe_allow_html=True)
         
