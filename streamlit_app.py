@@ -309,26 +309,39 @@ if proceed:
 
         st.markdown(pen_portrait_output)
 
-        # --- Household Summary Verification ---
-        st.subheader("📋 Does this sound like your household?")
+        # --- Household Narrative Summary ---
+        st.subheader("📋 Household Narrative Summary")
         
-        # Create the radio button with a callback
-        response = st.radio(
-            label="Please select an option",
-            options=[
-                "✅ Yes, mostly accurate",
-                "✏️ A few things are off",
-                "❌ Not accurate at all"
-            ],
-            key="summary_response",
-            on_change=on_radio_change
-        )
+        # Generate the household narrative summary
+        pen_portrait_prompt = f"""
+You are a registered dietitian with deep expertise in behavioral nutrition. You're writing a short narrative summary for a household based on their grocery purchases. This summary is shown directly to the household and is meant to help them feel understood while sparking curiosity about their food patterns.
+
+🎯 GOAL: Generate a 3–5 sentence **narrative snapshot** of this household's food behaviors, cooking habits, and nutritional tendencies, using the grocery list as your only input. This is not a clinical assessment — it's an insightful, pattern-based reflection to build trust and interest.
+
+✅ KEY TASKS:
+1. Identify **visible patterns** — repeat food types, known brands, pack sizes, cooking complexity, kid-friendly or time-saving items, etc.
+2. Draw **behavioral conclusions** — about household size, time constraints, health focus (or lack of), flavor/cultural leanings, or economic choices.
+3. Include **2–3 specific clues or examples** from the list — don't be generic.
+4. Avoid clinical labeling, moral judgment, or sugarcoating. Be observant and empathetic, not overly positive.
+5. If the data is sparse or ambiguous, say that — and describe what can or can't be inferred.
+
+🔍 MASTER SHOP RECORD:
+{cleaned_items_output}
+
+🛒 Store: {store_name}
+🗓️ Most Recent Receipt Date: {receipt_date}
+
+Your Output: Write a narrative snapshot that begins with "This household..."
+"""
         
-        # Handle correction input if response is not "Yes, mostly accurate"
-        if response != "✅ Yes, mostly accurate":
-            st.info("Oops! We sometimes make mistakes. Do you have a sec to tell us what's off so we can improve?")
-            correction_text = st.text_area("Optional: Tell us what's off", placeholder="E.g., 'We don't have kids' or 'We cook more than it says.'")
-            st.caption("⏭️ No worries if you don't have time — you'll get a chance to confirm and correct details in the next step.")
+        # Generate the household narrative summary
+        household_summary = generate_household_summary(pen_portrait_prompt)
+        
+        # Display the household narrative summary
+        st.markdown(household_summary)
+        
+        # Add a message about the summary
+        st.info("The things in our shopping carts can tell us a lot about a household, but not everything. If this doesn't sound like you don't worry - we will get detailed information about your HH at a later step.")
         
         # Continue button
         if st.button("➡️ Continue to Food Guidance", key="continue_button"):
