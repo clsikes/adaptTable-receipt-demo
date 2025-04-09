@@ -11,6 +11,11 @@ def on_continue_click():
     st.session_state.analysis_complete = True
     st.session_state.show_helps_hinders = True
 
+def on_radio_change():
+    # This function will be called when the radio button changes
+    # It doesn't need to do anything, just being called prevents the page reload
+    pass
+
 # --- Load Secrets ---
 try:
     # Try to load from Streamlit Cloud secrets first
@@ -23,6 +28,7 @@ except:
     GOOGLE_VISION_API_KEY = secrets["google_api_key"]
     OPENAI_API_KEY = secrets["openai_api_key"]
 
+# Initialize OpenAI client with API key
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 # --- Initialize Session State ---
@@ -36,6 +42,10 @@ if "household_summary" not in st.session_state:
     st.session_state.household_summary = None
 if "analysis_complete" not in st.session_state:
     st.session_state.analysis_complete = False
+if "cleaned_items_output" not in st.session_state:
+    st.session_state.cleaned_items_output = None
+if "current_step" not in st.session_state:
+    st.session_state.current_step = "upload"
 
 # --- Helper Function: Extract all store blocks from markdown table ---
 def extract_all_store_blocks(parsed_text):
@@ -80,9 +90,9 @@ st.markdown(
 st.markdown("""
 ### 👋 Welcome to AdaptTable – your household health co-pilot
 
-I'm here to make improving your household's health through food easier, more achievable, and more acceptable for everyone (yes, even you—Seafood-Skeptic-of-the-Deep 🐟🙅‍♂️).
+I'm here to make improving your household's health through food easier, more achievable, and more acceptable for everyone in your household (yes, even you—Seafood-Skeptic-of-the-Deep 🐟🙅‍♂️).
 
-Learning how to manage a health condition—or simply eat better—can feel overwhelming:
+Learning how to use food as medicine - to manage a health condition, or simply improve your overall health, can feel overwhelming:
 - 🤔 *How am I doing with my current diet?*  
 - 🔄 *What exactly needs to change?*  
 - 👨‍👩‍👧 *How do I make changes that my whole household will actually accept?*
@@ -122,11 +132,13 @@ if st.session_state.uploaded_receipts:
     """)
     
     proceed = st.button("✅ I'm Ready – Analyze My Shopping Data")
+    if proceed:
+        st.session_state.current_step = "analysis"
 else:
     proceed = False
 
 # --- Combined Text Extraction and Analysis ---
-if proceed:
+if st.session_state.current_step == "analysis":
     combined_text = ""
 
     for uploaded_file in st.session_state.uploaded_receipts:
@@ -230,6 +242,7 @@ if proceed:
 
             cleaned_items_output = response.choices[0].message.content
             st.session_state.master_record = cleaned_items_output
+            st.session_state.cleaned_items_output = cleaned_items_output  # Store in session state
             
             st.markdown("### 🧾 Your Master Shopping Record")
 
@@ -259,38 +272,48 @@ if proceed:
     try:
         st.subheader("💡 Summary of Your Shopping Habits")
 
+        # Extract store name and receipt date from the master record
+        store_name = "Unknown Store"
+        receipt_date = "Unknown Date"
+        
+        # Try to extract store name and date from the master record
+        if cleaned_items_output:
+            # Look for store name pattern
+            store_lines = [line for line in cleaned_items_output.split('\n') if "Store Name:" in line]
+            if store_lines:
+                store_name = store_lines[0].split("Store Name:")[1].strip()
+            
+            # Look for date pattern
+            date_lines = [line for line in cleaned_items_output.split('\n') if "Date:" in line]
+            if date_lines:
+                receipt_date = date_lines[0].split("Date:")[1].strip()
+        
+        # Generate the household narrative summary
         pen_portrait_prompt = f"""
-        You are a registered dietitian who specializes in empowering households to understand and improve their food choices. You are reviewing the output of a tool that converts a grocery receipt into a structured list of items. Each item may include a short name and, when possible, a longer expansion. You are creating a patient-facing summary to help the user understand their shopping habits and identify opportunities for improvement. The tone should be supportive but not overly positive — focus on clear, specific insights rooted in evidence and behavioral observation.
-        
-        Step 1: Review Input Format
-        You are provided with a list of grocery items purchased by a household. Each row contains a raw item name and, when available, a confident expansion. Use both fields when identifying trends, favoring the expansion when it offers more clarity. Do not make assumptions based on items that are unclear or ambiguous.
-        
-        Step 2: Identify and Analyze Shopping Patterns
-        Analyze shopping patterns based solely on the visible item names and expansions. Do not rely on any internal food database. Instead, use commonsense knowledge and observable trends. Where appropriate, cite examples from the list. Analyze for the following:
-        
-        - ✅ Recurring food categories, such as proteins, grains, snacks, dairy, beverages, sweets, condiments, or frozen meals. Name the categories only if there are multiple examples.
-        - ✅ Household size & composition, if inferable (e.g., kids, adults, multiple dietary needs).
-        - ✅ Meal preparation habits, such as reliance on convenience items vs. ingredients for home-cooked meals.
-        - ✅ Spending habits, such as bulk items, store brands, or premium brands.
-        - ✅ Dietary preferences or restrictions, such as gluten-free, low-carb, vegetarian, etc.
-        - ✅ Brand preferences, if certain brands appear multiple times.
-        - ✅ Lifestyle indicators, such as a busy or social household — include only if confident based on 3+ distinct items (≥60% confidence).
-        - ✅ Unexpected or culturally specific patterns, like repeated purchases of a specific spice, dish, or ingredient type.
-        
-        Cite only patterns that are clearly supported by the data. Avoid vague or overly positive generalizations.
-        
-        Step 3: Write the Patient Summary
-        Write a short, specific summary that reflects this household's current shopping patterns. Use an empathetic tone, but prioritize clarity, usefulness, and behavioral insight. If relevant, comment on strengths and possible areas for improvement in a way that helps the household feel understood and supported. Do not mention any item that wasn't clearly extracted or expanded.
-        
-        Master Shop Record:
-        {cleaned_items_output}
-        """
-        system_message = "You are a registered dietitian. Base your summary on Raw Item names, using Expansion only when it improves clarity. Do not use expansions marked Ambiguous."
+You are a registered dietitian with deep expertise in behavioral nutrition. You're writing a short narrative summary for a household based on their grocery purchases. This summary is shown directly to the household and is meant to help them feel understood while sparking curiosity about their food patterns.
 
+🎯 GOAL: Generate a 3–5 sentence **narrative snapshot** of this household's food behaviors, cooking habits, and nutritional tendencies, using the grocery list as your only input. This is not a clinical assessment — it's an insightful, pattern-based reflection to build trust and interest.
+
+✅ KEY TASKS:
+1. Identify **visible patterns** — repeat food types, known brands, pack sizes, cooking complexity, kid-friendly or time-saving items, etc.
+2. Draw **behavioral conclusions** — about household size, time constraints, health focus (or lack of), flavor/cultural leanings, or economic choices.
+3. Include **2–3 specific clues or examples** from the list — don't be generic.
+4. Avoid clinical labeling, moral judgment, or sugarcoating. Be observant and empathetic, not overly positive.
+5. If the data is sparse or ambiguous, say that — and describe what can or can't be inferred.
+
+🔍 MASTER SHOP RECORD:
+{cleaned_items_output}
+
+🛒 Store: {store_name}
+🗓️ Most Recent Receipt Date: {receipt_date}
+
+Your Output: Write a narrative snapshot that begins with "This household..."
+"""
+        
         pen_portrait_response = client.chat.completions.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": system_message},
+                {"role": "system", "content": "You are a registered dietitian. Base your summary on Raw Item names, using Expansion only when it improves clarity. Do not use expansions marked Ambiguous."},
                 {"role": "user", "content": pen_portrait_prompt}
             ]
         )
@@ -299,27 +322,11 @@ if proceed:
         st.session_state.household_summary = pen_portrait_output
 
         st.markdown(pen_portrait_output)
-
-        # --- Household Summary Verification ---
-        st.subheader("📋 Does this sound like your household?")
         
-        response = st.radio(
-            label="Please select an option",
-            options=[
-                "✅ Yes, mostly accurate",
-                "✏️ A few things are off",
-                "❌ Not accurate at all"
-            ],
-            key="summary_response"
-        )
-
-        # Handle correction input if response is not "Yes, mostly accurate"
-        if st.session_state.summary_response != "✅ Yes, mostly accurate":
-            st.info("Oops! We sometimes make mistakes. Do you have a sec to tell us what's off so we can improve?")
-            correction_text = st.text_area("Optional: Tell us what's off", placeholder="E.g., 'We don't have kids' or 'We cook more than it says.'")
-            st.caption("⏭️ No worries if you don't have time — you'll get a chance to confirm and correct details in the next step.")
+        # Add a message about the summary
+        st.info("The things in our shopping carts can tell us a lot about a household, but not everything. If this doesn't sound like you don't worry - we will get detailed information about your HH at a later step.")
         
-        # Continue button with single callback
+        # Continue button with callback
         if st.button("➡️ Continue to Food Guidance", key="continue_button", on_click=on_continue_click):
             pass
 
@@ -329,6 +336,7 @@ if proceed:
 
 # --- Helps / Hinders GPT Analysis Block ---
 if st.session_state.analysis_complete and st.session_state.show_helps_hinders and st.session_state.master_record:
+    st.subheader("🎯 What Helps or Hinders Your Food Choices?")
     try:
         st.markdown("### 🍽️ How Your Foods May Impact Blood Sugar")
         
@@ -361,20 +369,29 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
         For each food that supports blood sugar control (low-GI, high-fiber, high-protein, or rich in healthy fats):
         - List at least 5-7 items from their shopping list
         - Use appropriate food icons (🥑 for avocado, 🥛 for milk, 🥬 for vegetables, etc.)
-        - Format each item as:
+        - Format each item EXACTLY as follows with double line breaks between items:
           **🥑 Food Item:** [name]  
+          
           **✅ Why It's Great for Blood Sugar Control:** [clear, evidence-based explanation]  
+          
           **🍽️ How to Use It:** [practical, specific suggestions]
+          
+          [Double line break before next item]
 
         ⚠️ CHALLENGING FOODS
         For each food that may hinder blood sugar control (high-GI, refined carbs, low fiber, low protein, or high in added sugar):
         - List at least 5-7 items from their shopping list
         - Use appropriate food icons (🍞 for bread, 🍪 for cookies, 🥤 for sugary drinks, etc.)
-        - Format each item as:
-          ** Food Item:** [name]  
+        - Format each item EXACTLY as follows with double line breaks between items:
+          **[icon] Food Item:** [name]  
+          
           **❌ Why It May Challenge Control:** [clear, evidence-based explanation]  
+          
           **✅ Try Instead:** [specific alternative with better glycemic profile]  
-          **🔄 Adaptation Tip:** Suggest how to still use or enjoy this food with adjustments (e.g., pairing with protein, changing timing, reducing portion)
+          
+          **🔄 Adaptation Tip:** [suggestion for adjustments]
+          
+          [Double line break before next item]
 
         STEP 3: Include Fixed Top Tips Section
         Always include these specific tips, personalizing only the bracketed examples with items from their shopping list:
@@ -422,6 +439,7 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
         - Do not show the steps or internal structure to the user
         - Maintain the exact wording of the top tips section, only personalizing the bracketed examples
         - Use the exact wording for the Adaptation Tip as specified
+        - IMPORTANT: Use double line breaks between each food item to ensure proper formatting
 
         Master Shop Record:
         {st.session_state.master_record}
