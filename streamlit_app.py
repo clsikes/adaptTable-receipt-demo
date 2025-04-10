@@ -513,12 +513,12 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
         # Display helpful foods
         if 'helpful_foods_content' in st.session_state:
             # Split content to find and format the intro sentence
-            content_parts = st.session_state.helpful_foods_content.split("Here are some items from your list that can be particularly helpful:")
-            if len(content_parts) > 1:
+            content_parts = st.session_state.helpful_foods_content.split("\n\n")
+            if content_parts:
                 intro = content_parts[0]
-                items = content_parts[1]
+                items = "\n\n".join(content_parts[1:])
                 st.markdown(intro)
-                st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; margin-top: 1.5em; margin-bottom: 1em;'>Here are some items from your list that can be particularly helpful:</h3>", unsafe_allow_html=True)
+                st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #2e7d32; margin-top: 1.5em; margin-bottom: 1em;'>Here are some items from your list that can be particularly helpful in managing blood sugar:</h3>", unsafe_allow_html=True)
                 st.markdown(items)
             else:
                 st.markdown(st.session_state.helpful_foods_content)
@@ -647,18 +647,18 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
             if "Here are a few items that might require a bit more planning:" in content:
                 # Remove any intro paragraph before the section header
                 content = content.split("Here are a few items that might require a bit more planning:", 1)[1]
-                # Add our new header
-                formatted_challenging = "<h3 style='font-size: 1.5rem; font-weight: 600; color: #c62828; margin-top: 1.5em; margin-bottom: 1em;'>Now let's take a look at food items that could be a bit more challenging:</h3>" + content
-            else:
-                formatted_challenging = content
-
-            # Format the Top Tips header
-            formatted_challenging = formatted_challenging.replace(
-                "💡 **Top Tips for Blood Sugar Stability**", 
-                "<h3 style='font-size: 1.5rem; color: #1565c0;'>💡 Top Tips for Blood Sugar Stability</h3>"
-            )
             
-            st.markdown(formatted_challenging, unsafe_allow_html=True)
+            # Add our new header with matching style
+            st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #c62828; margin-top: 1.5em; margin-bottom: 1em;'>Now let's take a look at food items that could be a bit more challenging:</h3>", unsafe_allow_html=True)
+            
+            # Format the Top Tips header
+            if "💡 **Top Tips for Blood Sugar Stability**" in content:
+                content = content.replace(
+                    "💡 **Top Tips for Blood Sugar Stability**", 
+                    "<h3 style='font-size: 1.5rem; font-weight: 600; color: #1565c0; margin-top: 1.5em; margin-bottom: 1em;'>💡 Top Tips for Blood Sugar Stability</h3>"
+                )
+            
+            st.markdown(content, unsafe_allow_html=True)
             st.info(f"Challenging foods analysis completed in {st.session_state.challenging_processing_time:.2f} seconds")
 
     except Exception as e:
