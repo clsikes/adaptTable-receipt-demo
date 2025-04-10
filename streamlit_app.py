@@ -323,78 +323,83 @@ if st.session_state.current_step == "analysis":
     try:
         st.subheader("💡 Summary of Your Shopping Habits")
 
-        pen_portrait_prompt = f"""
-        You are a registered dietitian who specializes in empowering households to understand and improve their food choices. You are reviewing the output of a tool that converts a grocery receipt into a structured list of items. Each item may include a short name and, when possible, a longer expansion. You are creating a patient-facing summary to help the user understand their shopping habits and identify opportunities for improvement. The tone should be supportive but not overly positive — focus on clear, specific insights rooted in evidence and behavioral observation.
-        
-        Step 1: Review Input Format
-        You are provided with a list of grocery items purchased by a household. Each row contains a raw item name and, when available, a confident expansion. Use both fields when identifying trends, favoring the expansion when it offers more clarity. Do not make assumptions based on items that are unclear or ambiguous.
-        
-        Step 2: Identify and Analyze Shopping Patterns
-        Analyze shopping patterns based solely on the visible item names and expansions. Do not rely on any internal food database. Instead, use commonsense knowledge and observable trends. Where appropriate, cite examples from the list. Analyze for the following:
-        
-        - ✅ Recurring food categories, such as proteins, grains, snacks, dairy, beverages, sweets, condiments, or frozen meals. Name the categories only if there are multiple examples.
-        - ✅ Household size & composition, if inferable (e.g., kids, adults, multiple dietary needs).
-        - ✅ Meal preparation habits, such as reliance on convenience items vs. ingredients for home-cooked meals.
-        - ✅ Spending habits, such as bulk items, store brands, or premium brands.
-        - ✅ Dietary preferences or restrictions, such as gluten-free, low-carb, vegetarian, etc.
-        - ✅ Brand preferences, if certain brands appear multiple times.
-        - ✅ Lifestyle indicators, such as a busy or social household — include only if confident based on 3+ distinct items (≥60% confidence).
-        - ✅ Unexpected or culturally specific patterns, like repeated purchases of a specific spice, dish, or ingredient type.
-        
-        Cite only patterns that are clearly supported by the data. Avoid vague or overly positive generalizations.
-        
-        Step 3: Write the Patient Summary
-        Write a short, specific summary that reflects this household's current shopping patterns. Use an empathetic tone, but prioritize clarity, usefulness, and behavioral insight. If relevant, comment on strengths and possible areas for improvement in a way that helps the household feel understood and supported. Do not mention any item that wasn't clearly extracted or expanded.
-        
-        Master Shop Record:
-        {cleaned_items_output}
-        """
-        system_message = "You are a registered dietitian. Base your summary on Raw Item names, using Expansion only when it improves clarity. Do not use expansions marked Ambiguous."
+        # Only generate summary if it doesn't exist in session state
+        if 'household_summary' not in st.session_state:
+            pen_portrait_prompt = f"""
+            You are a registered dietitian who specializes in empowering households to understand and improve their food choices. You are reviewing the output of a tool that converts a grocery receipt into a structured list of items. Each item may include a short name and, when possible, a longer expansion. You are creating a patient-facing summary to help the user understand their shopping habits and identify opportunities for improvement. The tone should be supportive but not overly positive — focus on clear, specific insights rooted in evidence and behavioral observation.
+            
+            Step 1: Review Input Format
+            You are provided with a list of grocery items purchased by a household. Each row contains a raw item name and, when available, a confident expansion. Use both fields when identifying trends, favoring the expansion when it offers more clarity. Do not make assumptions based on items that are unclear or ambiguous.
+            
+            Step 2: Identify and Analyze Shopping Patterns
+            Analyze shopping patterns based solely on the visible item names and expansions. Do not rely on any internal food database. Instead, use commonsense knowledge and observable trends. Where appropriate, cite examples from the list. Analyze for the following:
+            
+            - ✅ Recurring food categories, such as proteins, grains, snacks, dairy, beverages, sweets, condiments, or frozen meals. Name the categories only if there are multiple examples.
+            - ✅ Household size & composition, if inferable (e.g., kids, adults, multiple dietary needs).
+            - ✅ Meal preparation habits, such as reliance on convenience items vs. ingredients for home-cooked meals.
+            - ✅ Spending habits, such as bulk items, store brands, or premium brands.
+            - ✅ Dietary preferences or restrictions, such as gluten-free, low-carb, vegetarian, etc.
+            - ✅ Brand preferences, if certain brands appear multiple times.
+            - ✅ Lifestyle indicators, such as a busy or social household — include only if confident based on 3+ distinct items (≥60% confidence).
+            - ✅ Unexpected or culturally specific patterns, like repeated purchases of a specific spice, dish, or ingredient type.
+            
+            Cite only patterns that are clearly supported by the data. Avoid vague or overly positive generalizations.
+            
+            Step 3: Write the Patient Summary
+            Write a short, specific summary that reflects this household's current shopping patterns. Use an empathetic tone, but prioritize clarity, usefulness, and behavioral insight. If relevant, comment on strengths and possible areas for improvement in a way that helps the household feel understood and supported. Do not mention any item that wasn't clearly extracted or expanded.
+            
+            Master Shop Record:
+            {cleaned_items_output}
+            """
+            system_message = "You are a registered dietitian. Base your summary on Raw Item names, using Expansion only when it improves clarity. Do not use expansions marked Ambiguous."
 
-        # Process with selected model
-        start_time = time.time()
-        
-        if model_choice == "OpenAI GPT-4":
-            pen_portrait_response = client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": system_message},
-                    {"role": "user", "content": pen_portrait_prompt}
-                ]
-            )
-            pen_portrait_output = pen_portrait_response.choices[0].message.content
-        elif model_choice == "OpenAI GPT-3.5-Turbo":
-            pen_portrait_response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": system_message},
-                    {"role": "user", "content": pen_portrait_prompt}
-                ]
-            )
-            pen_portrait_output = pen_portrait_response.choices[0].message.content
-        elif model_choice == "Google Gemini 2.5":
-            model = genai.GenerativeModel('gemini-2.5-pro-preview-03-25')
-            response = model.generate_content(
-                f"{system_message}\n\n{pen_portrait_prompt}"
-            )
-            pen_portrait_output = response.text
-        
-        end_time = time.time()
-        processing_time = end_time - start_time
-        
-        # Store the processing time
-        if "household_summary" not in st.session_state.processing_times:
-            st.session_state.processing_times["household_summary"] = {}
-        
-        st.session_state.processing_times["household_summary"][model_choice] = processing_time
-        
-        st.session_state.household_summary = pen_portrait_output
+            # Process with selected model
+            start_time = time.time()
+            
+            if model_choice == "OpenAI GPT-4":
+                pen_portrait_response = client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": system_message},
+                        {"role": "user", "content": pen_portrait_prompt}
+                    ]
+                )
+                pen_portrait_output = pen_portrait_response.choices[0].message.content
+            elif model_choice == "OpenAI GPT-3.5-Turbo":
+                pen_portrait_response = client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": system_message},
+                        {"role": "user", "content": pen_portrait_prompt}
+                    ]
+                )
+                pen_portrait_output = pen_portrait_response.choices[0].message.content
+            elif model_choice == "Google Gemini 2.5":
+                model = genai.GenerativeModel('gemini-2.5-pro-preview-03-25')
+                response = model.generate_content(
+                    f"{system_message}\n\n{pen_portrait_prompt}"
+                )
+                pen_portrait_output = response.text
+            
+            end_time = time.time()
+            processing_time = end_time - start_time
+            
+            # Store the processing time
+            if "household_summary" not in st.session_state.processing_times:
+                st.session_state.processing_times["household_summary"] = {}
+            
+            st.session_state.processing_times["household_summary"][model_choice] = processing_time
+            
+            # Store the summary in session state
+            st.session_state.household_summary = pen_portrait_output
 
-        st.markdown(pen_portrait_output)
+        # Display the stored summary
+        st.markdown(st.session_state.household_summary)
         
-        # Display processing time
-        st.info(f"Processing time: {processing_time:.2f} seconds")
-        
+        # Display processing time if available
+        if "household_summary" in st.session_state.processing_times and model_choice in st.session_state.processing_times["household_summary"]:
+            st.info(f"Processing time: {st.session_state.processing_times['household_summary'][model_choice]:.2f} seconds")
+
         # Add a message about the summary
         st.info("The things in our shopping carts can tell us a lot about a household, but not everything. If this doesn't sound like you don't worry - we will get detailed information about your HH at a later step.")
         
@@ -500,11 +505,16 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
 
         # Display helpful foods
         if 'helpful_foods_content' in st.session_state:
-            formatted_helpful = st.session_state.helpful_foods_content.replace(
-                "✅ HELPFUL FOODS", 
-                "<h3 style='font-size: 1.5rem; color: #2e7d32;'>✅ HELPFUL FOODS</h3>"
-            )
-            st.markdown(formatted_helpful, unsafe_allow_html=True)
+            # Split content to find and format the intro sentence
+            content_parts = st.session_state.helpful_foods_content.split("Here are some items from your list that can be particularly helpful:")
+            if len(content_parts) > 1:
+                intro = content_parts[0]
+                items = content_parts[1]
+                st.markdown(intro)
+                st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; margin-top: 1.5em; margin-bottom: 1em;'>Here are some items from your list that can be particularly helpful:</h3>", unsafe_allow_html=True)
+                st.markdown(items)
+            else:
+                st.markdown(st.session_state.helpful_foods_content)
             st.info(f"Helpful foods analysis completed in {st.session_state.helpful_processing_time:.2f} seconds")
 
         # Process challenging foods in background if not already done
@@ -625,13 +635,22 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
 
         # Display challenging foods if available
         if 'challenging_foods_content' in st.session_state:
-            formatted_challenging = st.session_state.challenging_foods_content.replace(
-                "⚠️ CHALLENGING FOODS", 
-                "<h3 style='font-size: 1.5rem; color: #c62828;'>⚠️ CHALLENGING FOODS</h3>"
-            ).replace(
+            # Remove the redundant intro paragraph and update the section header
+            content = st.session_state.challenging_foods_content
+            if "Here are a few items that might require a bit more planning:" in content:
+                # Remove any intro paragraph before the section header
+                content = content.split("Here are a few items that might require a bit more planning:", 1)[1]
+                # Add our new header
+                formatted_challenging = "<h3 style='font-size: 1.5rem; font-weight: 600; color: #c62828; margin-top: 1.5em; margin-bottom: 1em;'>Now let's take a look at food items that could be a bit more challenging:</h3>" + content
+            else:
+                formatted_challenging = content
+
+            # Format the Top Tips header
+            formatted_challenging = formatted_challenging.replace(
                 "💡 **Top Tips for Blood Sugar Stability**", 
                 "<h3 style='font-size: 1.5rem; color: #1565c0;'>💡 Top Tips for Blood Sugar Stability</h3>"
             )
+            
             st.markdown(formatted_challenging, unsafe_allow_html=True)
             st.info(f"Challenging foods analysis completed in {st.session_state.challenging_processing_time:.2f} seconds")
 
