@@ -323,8 +323,8 @@ if st.session_state.current_step == "analysis":
     try:
         st.subheader("💡 Summary of Your Shopping Habits")
 
-        # Only generate summary if it doesn't exist in session state
-        if 'household_summary' not in st.session_state:
+        # Only generate summary if it doesn't exist in session state or is None
+        if 'household_summary' not in st.session_state or st.session_state.household_summary is None:
             pen_portrait_prompt = f"""
             You are a registered dietitian who specializes in empowering households to understand and improve their food choices. You are reviewing the output of a tool that converts a grocery receipt into a structured list of items. Each item may include a short name and, when possible, a longer expansion. You are creating a patient-facing summary to help the user understand their shopping habits and identify opportunities for improvement. The tone should be supportive but not overly positive — focus on clear, specific insights rooted in evidence and behavioral observation.
             
@@ -390,22 +390,29 @@ if st.session_state.current_step == "analysis":
             
             st.session_state.processing_times["household_summary"][model_choice] = processing_time
             
-            # Store the summary in session state
-            st.session_state.household_summary = pen_portrait_output
+            # Store the summary in session state if it's not None or empty
+            if pen_portrait_output and pen_portrait_output.strip():
+                st.session_state.household_summary = pen_portrait_output
+            else:
+                st.error("Failed to generate household summary. Please try again.")
+                st.stop()
 
-        # Display the stored summary
-        st.markdown(st.session_state.household_summary)
-        
-        # Display processing time if available
-        if "household_summary" in st.session_state.processing_times and model_choice in st.session_state.processing_times["household_summary"]:
-            st.info(f"Processing time: {st.session_state.processing_times['household_summary'][model_choice]:.2f} seconds")
+        # Display the stored summary if it exists and is not None
+        if st.session_state.household_summary and st.session_state.household_summary.strip():
+            st.markdown(st.session_state.household_summary)
+            
+            # Display processing time if available
+            if "household_summary" in st.session_state.processing_times and model_choice in st.session_state.processing_times["household_summary"]:
+                st.info(f"Processing time: {st.session_state.processing_times['household_summary'][model_choice]:.2f} seconds")
 
-        # Add a message about the summary
-        st.info("The things in our shopping carts can tell us a lot about a household, but not everything. If this doesn't sound like you don't worry - we will get detailed information about your HH at a later step.")
-        
-        # Continue button with callback - update condition to check for household_summary
-        if st.session_state.household_summary:  # Show if household summary exists
+            # Add a message about the summary
+            st.info("The things in our shopping carts can tell us a lot about a household, but not everything. If this doesn't sound like you don't worry - we will get detailed information about your HH at a later step.")
+            
+            # Show continue button only if we have a valid summary
             st.button("Continue to Food Guidance", on_click=on_continue_to_guidance_click)
+        else:
+            st.error("No valid household summary available. Please try again.")
+            st.stop()
 
     except Exception as e:
         st.error("There was a problem generating the Household Profile.")
