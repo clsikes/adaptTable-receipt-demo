@@ -18,6 +18,15 @@ def on_radio_change():
     # It doesn't need to do anything, just being called prevents the page reload
     pass
 
+def on_continue_to_guidance_click():
+    st.session_state.analysis_complete = True
+    st.session_state.show_helps_hinders = True
+    # Clear any existing helps/hinders content to ensure fresh generation
+    if 'helpful_foods_content' in st.session_state:
+        del st.session_state.helpful_foods_content
+    if 'challenging_foods_content' in st.session_state:
+        del st.session_state.challenging_foods_content
+
 # --- Load Secrets ---
 try:
     # Try to load from Streamlit Cloud secrets first
@@ -390,8 +399,8 @@ if st.session_state.current_step == "analysis":
         st.info("The things in our shopping carts can tell us a lot about a household, but not everything. If this doesn't sound like you don't worry - we will get detailed information about your HH at a later step.")
         
         # Continue button with callback
-        if st.button("➡️ Continue to Food Guidance", key="continue_button", on_click=on_continue_click):
-            pass
+        if st.session_state.get('summary_generated', False):  # Only show if summary exists
+            st.button("Continue to Food Guidance", on_click=on_continue_to_guidance_click)
 
     except Exception as e:
         st.error("There was a problem generating the Household Profile.")
@@ -401,7 +410,8 @@ if st.session_state.current_step == "analysis":
 if st.session_state.analysis_complete and st.session_state.show_helps_hinders and st.session_state.master_record:
     st.subheader("🍽️ How Your Foods May Impact Blood Sugar")
     try:
-        helps_hinders_prompt = f"""
+        # Define the helpful foods prompt
+        helpful_foods_prompt = f"""
         🧠 ROLE:
         You are a registered dietitian helping a household understand how their recent grocery purchases may affect blood sugar control for someone managing Type 1 Diabetes (T1D).
 
@@ -410,7 +420,7 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
         - Helps users understand which foods support or challenge blood sugar control
         - Explains *why* in clear, evidence-based language
         - Provides alternatives and practical adaptation tips
-        - Supports shared decision-making between patient and provider
+        - Supports decision-making for future shops or conversations with health care providers
 
         Only use food items that appear in the provided shopping list — never invent or assume new ones.
 
@@ -421,12 +431,9 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
         - Acknowledges their shopping choices
         - Sets up the purpose of the analysis
         - Creates a supportive, non-judgmental tone
-        Example: "I've reviewed your recent shopping list, and I'm excited to help you understand how these choices might affect your blood sugar control. Let's look at specific items that could help or challenge your goals..."
+        Example: "I've reviewed your recent shopping list, and I'm excited to help you understand how these choices might affect your blood sugar control. Let's look at specific items that could help support your goals..."
 
-        STEP 2: Analyze and Categorize Items
-        Review each food and sort it into one of two categories:
-
-        ✅ HELPFUL FOODS
+        STEP 2: Analyze Helpful Foods
         For each food that supports blood sugar control (low-GI, high-fiber, high-protein, or rich in healthy fats):
         - List at least 5-7 items from their shopping list
         - Use appropriate food icons (🥑 for avocado, 🥛 for milk, 🥬 for vegetables, etc.)
@@ -439,155 +446,194 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
           
           [Double line break before next item]
 
-        ⚠️ CHALLENGING FOODS
-        For each food that may hinder blood sugar control (high-GI, refined carbs, low fiber, low protein, or high in added sugar):
-        - List at least 5-7 items from their shopping list
-        - Use appropriate food icons (🍞 for bread, 🍪 for cookies, 🥤 for sugary drinks, etc.)
-        - Format each item EXACTLY as follows with double line breaks between items:
-          **[icon] Food Item:** [name]  
-          
-          **❌ Why It May Challenge Control:** [clear, evidence-based explanation]  
-          
-          **✅ Try Instead:** [specific alternative with better glycemic profile]  
-          
-          **🔄 Adaptation Tip:** [suggestion for adjustments]
-          
-          [Double line break before next item]
-
-        STEP 3: Include Fixed Top Tips Section
-        Always include these specific tips, personalizing only the bracketed examples with items from their shopping list:
-
-        💡 **Top Tips for Blood Sugar Stability**
-
-        **🥚 Savory Breakfast First**  
-        Most people love a sweet start like [insert item if available – e.g., bananas or honey]. But mornings are when your body is more insulin-resistant — so starting with sugary foods can lead to big blood sugar spikes. Have some protein or fat first (e.g., turkey sausage, egg, avocado) to slow down absorption.
-
-        **🥦 Eat Veggies First**  
-        If your meals include pasta, rice, or bread, eat veggies or salad first. The fiber acts like a barrier and slows down carb absorption — making blood sugar easier to manage.
-
-        **🍽️ Eat In This Order:**  
-        Veggies → Protein/Fat → Carbs  
-        This simple order change can dramatically reduce blood sugar spikes.
-
-        **🧬 Pair Your Carbs**  
-        Got bread, granola bars, or crackers? Pair them with nut butter, cheese, or Greek yogurt. The added fat and protein help slow digestion.
-
-        **👟 Move After Meals**  
-        Even 10 minutes of walking after a meal can help flatten your glucose curve and aid digestion.
-
-        **🍏 Juice = Medicine, Not a Drink**  
-        Juice like [insert juice brand if available] works great for treating low blood sugar — but not for sipping throughout the day. Try water with lemon or a splash of juice instead.
-
-        **🥖 Choose Whole Over Processed**  
-        Highly processed foods (like [insert example from cart]) spike blood sugar faster. Opt for whole, fiber-rich versions when you can.
-
-        **🌾 Fiber = Power**  
-        Fiber slows digestion and supports blood sugar balance. Beans, whole grains, lentils, veggies — aim for more!
-
-        **🧘‍♀️ Sleep & Stress Matter**  
-        Poor sleep and stress can raise blood sugar. Prioritize rest and find calming rituals like yoga, walking, or mindfulness.
-
         ✅ RULES:
         - Never make up food items
         - Do not give medical advice or suggest medication
         - Use a friendly, informative tone that builds confidence
         - Keep explanations evidence-based and specific
         - Use appropriate food icons that match the items
-        - Analyze at least 5-7 items in each category
-        - Keep the entire output under ~1000 words
+        - Analyze at least 5-7 items
+        - Keep the output under ~500 words
         - Do not show the steps or internal structure to the user
-        - Maintain the exact wording of the top tips section, only personalizing the bracketed examples
-        - Use the exact wording for the Adaptation Tip as specified
         - IMPORTANT: Use double line breaks between each food item to ensure proper formatting
 
         Master Shop Record:
         {st.session_state.master_record}
         """
 
-        # Process with selected model
-        start_time = time.time()
-        
-        if model_choice == "OpenAI GPT-4":
-            response = client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "You are a registered dietitian specializing in diabetes management."},
-                    {"role": "user", "content": helps_hinders_prompt}
-                ]
+        # Process helpful foods first if not already in session state
+        if 'helpful_foods_content' not in st.session_state:
+            with st.spinner("Analyzing helpful foods in your shopping list..."):
+                start_time = time.time()
+                
+                if model_choice == "OpenAI GPT-4":
+                    response = client.chat.completions.create(
+                        model="gpt-4",
+                        messages=[
+                            {"role": "system", "content": "You are a registered dietitian specializing in diabetes management."},
+                            {"role": "user", "content": helpful_foods_prompt}
+                        ]
+                    )
+                    helpful_foods_output = response.choices[0].message.content
+                elif model_choice == "OpenAI GPT-3.5-Turbo":
+                    response = client.chat.completions.create(
+                        model="gpt-3.5-turbo",
+                        messages=[
+                            {"role": "system", "content": "You are a registered dietitian specializing in diabetes management."},
+                            {"role": "user", "content": helpful_foods_prompt}
+                        ]
+                    )
+                    helpful_foods_output = response.choices[0].message.content
+                elif model_choice == "Google Gemini 2.5":
+                    model = genai.GenerativeModel('gemini-2.5-pro-preview-03-25')
+                    response = model.generate_content(
+                        f"You are a registered dietitian specializing in diabetes management.\n\n{helpful_foods_prompt}"
+                    )
+                    helpful_foods_output = response.text
+                
+                end_time = time.time()
+                helpful_processing_time = end_time - start_time
+                
+                # Store in session state
+                st.session_state.helpful_foods_content = helpful_foods_output
+                st.session_state.helpful_processing_time = helpful_processing_time
+
+        # Display helpful foods
+        if 'helpful_foods_content' in st.session_state:
+            formatted_helpful = st.session_state.helpful_foods_content.replace(
+                "✅ HELPFUL FOODS", 
+                "<h3 style='font-size: 1.5rem; color: #2e7d32;'>✅ HELPFUL FOODS</h3>"
             )
-            helps_hinders_output = response.choices[0].message.content
-        elif model_choice == "OpenAI GPT-3.5-Turbo":
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "You are a registered dietitian specializing in diabetes management."},
-                    {"role": "user", "content": helps_hinders_prompt}
-                ]
+            st.markdown(formatted_helpful, unsafe_allow_html=True)
+            st.info(f"Helpful foods analysis completed in {st.session_state.helpful_processing_time:.2f} seconds")
+
+        # Process challenging foods in background if not already done
+        if 'challenging_foods_content' not in st.session_state:
+            challenging_foods_prompt = f"""
+            🧠 ROLE:
+            You are a registered dietitian helping a household understand how their recent grocery purchases may affect blood sugar control for someone managing Type 1 Diabetes (T1D).
+
+            🎯 GOAL:
+            From the Master Shopping Record, analyze the food items and produce friendly, fact-based, actionable guidance grounded in nutritional science that:
+            - Helps users understand which foods support or challenge blood sugar control
+            - Explains *why* in clear, evidence-based language
+            - Provides alternatives and practical adaptation tips
+            - Supports decision-making for future shops or conversations with health care providers
+
+            Only use food items that appear in the provided shopping list — never invent or assume new ones.
+
+            ---
+
+            STEP 1: Analyze Challenging Foods
+            For each food that may hinder blood sugar control (high-GI, refined carbs, low fiber, low protein, or high in added sugar):
+            - List at least 5-7 items from their shopping list
+            - Use appropriate food icons (🍞 for bread, 🍪 for cookies, 🥤 for sugary drinks, etc.)
+            - Format each item EXACTLY as follows with double line breaks between items:
+              **[icon] Food Item:** [name]  
+              
+              **❌ Why It May Challenge Control:** [clear, evidence-based explanation]  
+              
+              **✅ Try Instead:** [specific alternative with better glycemic profile]  
+              
+              **🔄 Adaptation Tip:** Suggest how to still use or enjoy this food with adjustments (e.g., pairing with protein, changing timing, reducing portion)
+              
+              [Double line break before next item]
+
+            STEP 2: Include Fixed Top Tips Section
+            Always include these specific tips, personalizing only the bracketed examples with items from their shopping list:
+
+            💡 **Top Tips for Blood Sugar Stability**
+
+            **🥚 Savory Breakfast First**  
+            Most people love a sweet start like [insert item if available – e.g., bananas or honey]. But mornings are when your body is more insulin-resistant — so starting with sugary foods can lead to big blood sugar spikes. Have some protein or fat first (e.g., turkey sausage, egg, avocado) to slow down absorption.
+
+            **🥦 Eat Veggies First**  
+            If your meals include pasta, rice, or bread, eat veggies or salad first. The fiber acts like a barrier and slows down carb absorption — making blood sugar easier to manage.
+
+            **🍽️ Eat In This Order:**  
+            Veggies → Protein/Fat → Carbs  
+            This simple order change can dramatically reduce blood sugar spikes.
+
+            **🧬 Pair Your Carbs**  
+            Got bread, granola bars, or crackers? Pair them with nut butter, cheese, or Greek yogurt. The added fat and protein help slow digestion.
+
+            **👟 Move After Meals**  
+            Even 10 minutes of walking after a meal can help flatten your glucose curve and aid digestion.
+
+            **🍏 Juice = Medicine, Not a Drink**  
+            Juice like [insert juice brand if available] works great for treating low blood sugar — but not for sipping throughout the day. Try water with lemon or a splash of juice instead.
+
+            **🥖 Choose Whole Over Processed**  
+            Highly processed foods (like [insert example from cart]) spike blood sugar faster. Opt for whole, fiber-rich versions when you can.
+
+            **🌾 Fiber = Power**  
+            Fiber slows digestion and supports blood sugar balance. Beans, whole grains, lentils, veggies — aim for more!
+
+            **🧘‍♀️ Sleep & Stress Matter**  
+            Poor sleep and stress can raise blood sugar. Prioritize rest and find calming rituals like yoga, walking, or mindfulness.
+
+            ✅ RULES:
+            - Never make up food items
+            - Do not give medical advice or suggest medication
+            - Use a friendly, informative tone that builds confidence
+            - Keep explanations evidence-based and specific
+            - Use appropriate food icons that match the items
+            - Analyze at least 5-7 items
+            - Keep the output under ~500 words
+            - Do not show the steps or internal structure to the user
+            - Maintain the exact wording of the top tips section, only personalizing the bracketed examples
+            - IMPORTANT: Use double line breaks between each food item to ensure proper formatting
+
+            Master Shop Record:
+            {st.session_state.master_record}
+            """
+
+            with st.spinner("Analyzing challenging foods in your shopping list..."):
+                start_time = time.time()
+                
+                if model_choice == "OpenAI GPT-4":
+                    response = client.chat.completions.create(
+                        model="gpt-4",
+                        messages=[
+                            {"role": "system", "content": "You are a registered dietitian specializing in diabetes management."},
+                            {"role": "user", "content": challenging_foods_prompt}
+                        ]
+                    )
+                    challenging_foods_output = response.choices[0].message.content
+                elif model_choice == "OpenAI GPT-3.5-Turbo":
+                    response = client.chat.completions.create(
+                        model="gpt-3.5-turbo",
+                        messages=[
+                            {"role": "system", "content": "You are a registered dietitian specializing in diabetes management."},
+                            {"role": "user", "content": challenging_foods_prompt}
+                        ]
+                    )
+                    challenging_foods_output = response.choices[0].message.content
+                elif model_choice == "Google Gemini 2.5":
+                    model = genai.GenerativeModel('gemini-2.5-pro-preview-03-25')
+                    response = model.generate_content(
+                        f"You are a registered dietitian specializing in diabetes management.\n\n{challenging_foods_prompt}"
+                    )
+                    challenging_foods_output = response.text
+                
+                end_time = time.time()
+                challenging_processing_time = end_time - start_time
+                
+                # Store in session state
+                st.session_state.challenging_foods_content = challenging_foods_output
+                st.session_state.challenging_processing_time = challenging_processing_time
+
+        # Display challenging foods if available
+        if 'challenging_foods_content' in st.session_state:
+            formatted_challenging = st.session_state.challenging_foods_content.replace(
+                "⚠️ CHALLENGING FOODS", 
+                "<h3 style='font-size: 1.5rem; color: #c62828;'>⚠️ CHALLENGING FOODS</h3>"
+            ).replace(
+                "💡 **Top Tips for Blood Sugar Stability**", 
+                "<h3 style='font-size: 1.5rem; color: #1565c0;'>💡 Top Tips for Blood Sugar Stability</h3>"
             )
-            helps_hinders_output = response.choices[0].message.content
-        elif model_choice == "Google Gemini 2.5":
-            model = genai.GenerativeModel('gemini-2.5-pro-preview-03-25')
-            response = model.generate_content(
-                f"You are a registered dietitian specializing in diabetes management.\n\n{helps_hinders_prompt}"
-            )
-            helps_hinders_output = response.text
-        
-        end_time = time.time()
-        processing_time = end_time - start_time
-        
-        # Store the processing time
-        if "helps_hinders" not in st.session_state.processing_times:
-            st.session_state.processing_times["helps_hinders"] = {}
-        
-        st.session_state.processing_times["helps_hinders"][model_choice] = processing_time
-        
-        # Split the output into sections for progressive loading
-        sections = helps_hinders_output.split("⚠️ CHALLENGING FOODS")
-        if len(sections) == 2:
-            helpful_section = sections[0]
-            challenging_section = "⚠️ CHALLENGING FOODS" + sections[1]
-        else:
-            helpful_section = helps_hinders_output
-            challenging_section = ""
-        
-        # Remove the redundant header if it exists
-        helpful_section = helpful_section.replace("🎯 What Helps or Hinders Your Food Choices?", "")
-        
-        # Format the output to make headers larger
-        formatted_helpful = helpful_section.replace(
-            "✅ HELPFUL FOODS", 
-            "<h3 style='font-size: 1.5rem; color: #2e7d32;'>✅ HELPFUL FOODS</h3>"
-        )
-        
-        formatted_challenging = challenging_section.replace(
-            "⚠️ CHALLENGING FOODS", 
-            "<h3 style='font-size: 1.5rem; color: #c62828;'>⚠️ CHALLENGING FOODS</h3>"
-        ).replace(
-            "💡 **Top Tips for Blood Sugar Stability**", 
-            "<h3 style='font-size: 1.5rem; color: #1565c0;'>💡 Top Tips for Blood Sugar Stability</h3>"
-        )
-        
-        # Store the formatted sections in session state for progressive loading
-        if "helpful_section" not in st.session_state:
-            st.session_state.helpful_section = formatted_helpful
-            st.session_state.challenging_section = formatted_challenging
-            st.session_state.show_challenging = False
-        
-        # Display helpful foods immediately
-        st.markdown(st.session_state.helpful_section, unsafe_allow_html=True)
-        
-        # Add a button to show challenging foods
-        if not st.session_state.show_challenging:
-            if st.button("Show Challenging Foods and Tips"):
-                st.session_state.show_challenging = True
-                st.rerun()
-        
-        # Display challenging foods when the button is clicked
-        if st.session_state.show_challenging:
-            st.markdown(st.session_state.challenging_section, unsafe_allow_html=True)
-        
-        # Display processing time
-        st.info(f"Total processing time: {processing_time:.2f} seconds")
+            st.markdown(formatted_challenging, unsafe_allow_html=True)
+            st.info(f"Challenging foods analysis completed in {st.session_state.challenging_processing_time:.2f} seconds")
 
     except Exception as e:
         st.error("There was a problem generating the food guidance.")
