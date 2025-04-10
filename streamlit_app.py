@@ -398,8 +398,8 @@ if st.session_state.current_step == "analysis":
         # Add a message about the summary
         st.info("The things in our shopping carts can tell us a lot about a household, but not everything. If this doesn't sound like you don't worry - we will get detailed information about your HH at a later step.")
         
-        # Continue button with callback
-        if st.session_state.get('summary_generated', False):  # Only show if summary exists
+        # Continue button with callback - update condition to check for household_summary
+        if st.session_state.household_summary:  # Show if household summary exists
             st.button("Continue to Food Guidance", on_click=on_continue_to_guidance_click)
 
     except Exception as e:
