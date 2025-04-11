@@ -230,6 +230,10 @@ if "show_all_helpful" not in st.session_state:
     st.session_state.show_all_helpful = False
 if "show_all_challenging" not in st.session_state:
     st.session_state.show_all_challenging = False
+if "helpful_processing_time" not in st.session_state:
+    st.session_state.helpful_processing_time = 0.0
+if "challenging_processing_time" not in st.session_state:
+    st.session_state.challenging_processing_time = 0.0
 
 # --- Model Selection ---
 st.sidebar.title("Model Selection")
