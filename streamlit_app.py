@@ -734,6 +734,9 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
                         st.markdown(modified_part, unsafe_allow_html=True)
                     else:
                         st.markdown(part)
+            
+            # Add processing time info
+            st.info(f"Helpful foods analysis completed in {st.session_state.helpful_processing_time:.2f} seconds")
 
         # Add challenging_foods_prompt definition before the challenging foods processing section
         challenging_foods_prompt = f"""
@@ -862,10 +865,11 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
                     # Extract the emoji and food item
                     lines = part.split("\n")
                     food_line = next(line for line in lines if "Food Item:" in line)
-                    emoji = food_line.split("**")[1].split(" ")[0]
-                    food_item = food_line.split("Food Item:")[1].strip()
+                    # Ensure consistent formatting with helpful foods section
+                    emoji = food_line.split("**")[1].split(" ")[0] if "**" in food_line else "🍽️"  # Default emoji if none found
+                    food_item = food_line.split("Food Item:")[1].strip() if "Food Item:" in food_line else food_line.strip()
                     
-                    # Create styled food item header
+                    # Create styled food item header with consistent formatting
                     styled_header = f'<div class="food-item-challenging">{emoji} {food_item}</div>'
                     
                     # Replace the original food item line with styled version
@@ -875,6 +879,9 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
                     st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #1565c0; margin-top: 1.5em; margin-bottom: 1em;'>💡 Top Tips for Blood Sugar Stability</h3>", unsafe_allow_html=True)
                 else:
                     st.markdown(part)
+            
+            # Add processing time info
+            st.info(f"Challenging foods analysis completed in {st.session_state.challenging_processing_time:.2f} seconds")
 
     except Exception as e:
         st.error("There was a problem generating the food guidance.")
