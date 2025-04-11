@@ -8,6 +8,30 @@ import toml
 import time
 import google.generativeai as genai
 
+# Add custom CSS for food items
+st.markdown("""
+<style>
+.food-item-helpful {
+    background-color: #e8f5e9;  /* Light green background */
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    font-size: 1.2em;
+    font-weight: 600;
+    color: #2e7d32;  /* Darker green text */
+}
+.food-item-challenging {
+    background-color: #ffebee;  /* Light red background */
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    font-size: 1.2em;
+    font-weight: 600;
+    color: #c62828;  /* Darker red text */
+}
+</style>
+""", unsafe_allow_html=True)
+
 # --- Callback Function ---
 def on_continue_click():
     st.session_state.analysis_complete = True
@@ -515,12 +539,26 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
             content_parts = st.session_state.helpful_foods_content.split("\n\n")
             if content_parts:
                 intro = content_parts[0]
-                items = "\n\n".join(content_parts[1:])
                 st.markdown(intro)
                 st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #2e7d32; margin-top: 1.5em; margin-bottom: 1em;'>Here are some items from your list that can be particularly helpful in managing blood sugar:</h3>", unsafe_allow_html=True)
-                st.markdown(items)
-            else:
-                st.markdown(st.session_state.helpful_foods_content)
+                
+                for part in content_parts[1:]:
+                    if "Food Item:" in part:
+                        # Extract the emoji and food item
+                        lines = part.split("\n")
+                        food_line = next(line for line in lines if "Food Item:" in line)
+                        emoji = food_line.split("**")[1].split(" ")[0]
+                        food_item = food_line.split("Food Item:")[1].strip()
+                        
+                        # Create styled food item header
+                        styled_header = f'<div class="food-item-helpful">{emoji} {food_item}</div>'
+                        
+                        # Replace the original food item line with styled version
+                        modified_part = part.replace(food_line, styled_header)
+                        st.markdown(modified_part, unsafe_allow_html=True)
+                    else:
+                        st.markdown(part)
+        
             st.info(f"Helpful foods analysis completed in {st.session_state.helpful_processing_time:.2f} seconds")
 
         # Process challenging foods in background if not already done
@@ -640,23 +678,29 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
 
         # Display challenging foods if available
         if 'challenging_foods_content' in st.session_state:
-            # Remove the redundant intro paragraph and update the section header
-            content = st.session_state.challenging_foods_content
-            if "Here are a few items that might require a bit more planning:" in content:
-                # Remove any intro paragraph before the section header
-                content = content.split("Here are a few items that might require a bit more planning:", 1)[1]
+            content_parts = st.session_state.challenging_foods_content.split("\n\n")
+            st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #c62828; margin-top: 1.5em; margin-bottom: 1em;'>Now let's take a look at food items that could be more challenging:</h3>", unsafe_allow_html=True)
             
-            # Add our new header with matching style
-            st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #c62828; margin-top: 1.5em; margin-bottom: 1em;'>Now let's take a look at food items that could be a bit more challenging:</h3>", unsafe_allow_html=True)
+            for part in content_parts:
+                if "Food Item:" in part:
+                    # Extract the emoji and food item
+                    lines = part.split("\n")
+                    food_line = next(line for line in lines if "Food Item:" in line)
+                    emoji = food_line.split("**")[1].split(" ")[0]
+                    food_item = food_line.split("Food Item:")[1].strip()
+                    
+                    # Create styled food item header
+                    styled_header = f'<div class="food-item-challenging">{emoji} {food_item}</div>'
+                    
+                    # Replace the original food item line with styled version
+                    modified_part = part.replace(food_line, styled_header)
+                    st.markdown(modified_part, unsafe_allow_html=True)
+                elif "💡 **Top Tips" in part:
+                    st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #1565c0; margin-top: 1.5em; margin-bottom: 1em;'>💡 Top Tips for Blood Sugar Stability</h3>", unsafe_allow_html=True)
+                    st.markdown(part)
+                elif not any(skip in part for skip in ["let's take a look", "Okay,", "Remember, this is about"]):
+                    st.markdown(part)
             
-            # Format the Top Tips header
-            if "💡 **Top Tips for Blood Sugar Stability**" in content:
-                content = content.replace(
-                    "💡 **Top Tips for Blood Sugar Stability**", 
-                    "<h3 style='font-size: 1.5rem; font-weight: 600; color: #1565c0; margin-top: 1.5em; margin-bottom: 1em;'>💡 Top Tips for Blood Sugar Stability</h3>"
-                )
-            
-            st.markdown(content, unsafe_allow_html=True)
             st.info(f"Challenging foods analysis completed in {st.session_state.challenging_processing_time:.2f} seconds")
 
     except Exception as e:
