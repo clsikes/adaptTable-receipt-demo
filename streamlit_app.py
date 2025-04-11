@@ -465,7 +465,6 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
         - Keep explanations evidence-based and specific
         - Use appropriate food icons that match the items
         - Analyze ALL relevant items from the shopping list
-        - Keep the output under ~500 words
         - Do not show the steps or internal structure to the user
         - IMPORTANT: Use double line breaks between each food item to ensure proper formatting
 
@@ -596,7 +595,6 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
             - Keep explanations evidence-based and specific
             - Use appropriate food icons that match the items
             - Analyze ALL relevant items from the shopping list
-            - Keep the output under ~500 words
             - Do not show the steps or internal structure to the user
             - Maintain the exact wording of the top tips section, only personalizing the bracketed examples
             - IMPORTANT: Use double line breaks between each food item to ensure proper formatting
