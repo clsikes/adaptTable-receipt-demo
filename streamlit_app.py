@@ -24,8 +24,54 @@ def on_continue_to_guidance_click():
 def on_continue_to_household_click():
     st.session_state.show_household_form = True
 
+def display_paginated_foods_cached(food_items, page, is_helpful=True):
+    """Display food items with pagination using cached items."""
+    if not food_items:
+        return
+    
+    # Only paginate if we have more items than items_per_page
+    if len(food_items) <= st.session_state.items_per_page:
+        # Display all items if we have fewer than items_per_page
+        for item in food_items:
+            st.markdown(item)
+            st.markdown("---")
+        return
+    
+    # Calculate pagination
+    start_idx = (page - 1) * st.session_state.items_per_page
+    end_idx = min(start_idx + st.session_state.items_per_page, len(food_items))
+    total_pages = (len(food_items) + st.session_state.items_per_page - 1) // st.session_state.items_per_page
+    
+    # Display current page items
+    displayed_items = food_items[start_idx:end_idx]
+    for item in displayed_items:
+        st.markdown(item)
+        st.markdown("---")
+    
+    # Show pagination controls
+    cols = st.columns([1, 2, 1])
+    
+    with cols[0]:
+        if page > 1:
+            if st.button("← Previous", key=f"prev_{is_helpful}_{page}", use_container_width=True):
+                if is_helpful:
+                    st.session_state.helpful_foods_page = max(1, page - 1)
+                else:
+                    st.session_state.challenging_foods_page = max(1, page - 1)
+    
+    with cols[1]:
+        st.markdown(f"<div style='text-align: center'>Page {page} of {total_pages}</div>", unsafe_allow_html=True)
+    
+    with cols[2]:
+        if page < total_pages:
+            if st.button("Next →", key=f"next_{is_helpful}_{page}", use_container_width=True):
+                if is_helpful:
+                    st.session_state.helpful_foods_page = min(total_pages, page + 1)
+                else:
+                    st.session_state.challenging_foods_page = min(total_pages, page + 1)
+
 def parse_food_items(content):
-    """Parse food items from the content, maintaining exact formatting and keeping groups together."""
+    """Parse food items from the content, maintaining exact formatting."""
     items = []
     current_item = []
     
@@ -43,17 +89,16 @@ def parse_food_items(content):
                 items.append('\n'.join(current_item))
                 current_item = []
             
-            # Collect all lines for this food item (including Why Great/Challenge and How to Use/Adaptation)
-            current_item = [lines[i]]  # Start with the food item line
+            # Start collecting the new item
+            current_item = [lines[i]]
             i += 1
             
-            # Keep collecting lines until we hit the next food item or end of content
+            # Keep collecting lines until we find the start of another food item or reach the end
             while i < len(lines):
-                next_line = lines[i].strip()
-                # Stop if we hit the next food item or Top Tips section
-                if ('**' in next_line and 'Food Item:' in next_line) or '💡 **Top Tips' in next_line:
+                if i + 1 < len(lines) and '**' in lines[i + 1] and 'Food Item:' in lines[i + 1]:
                     break
-                current_item.append(lines[i])
+                if lines[i].strip():  # Only add non-empty lines
+                    current_item.append(lines[i])
                 i += 1
         else:
             i += 1
@@ -714,50 +759,3 @@ if st.session_state.processing_times:
         st.sidebar.markdown(f"**{step.replace('_', ' ').title()}:**")
         for model, time_taken in times.items():
             st.sidebar.markdown(f"- {model}: {time_taken:.2f} seconds")
-
-# Add new function for displaying cached items
-def display_paginated_foods_cached(food_items, page, is_helpful=True):
-    """Display food items with pagination using cached items."""
-    if not food_items:
-        return
-    
-    # Only paginate if we have more items than items_per_page
-    if len(food_items) <= st.session_state.items_per_page:
-        # Display all items if we have fewer than items_per_page
-        for item in food_items:
-            st.markdown(item)
-            st.markdown("---")
-        return
-    
-    # Calculate pagination
-    start_idx = (page - 1) * st.session_state.items_per_page
-    end_idx = min(start_idx + st.session_state.items_per_page, len(food_items))
-    total_pages = (len(food_items) + st.session_state.items_per_page - 1) // st.session_state.items_per_page
-    
-    # Display current page items
-    displayed_items = food_items[start_idx:end_idx]
-    for item in displayed_items:
-        st.markdown(item)
-        st.markdown("---")
-    
-    # Show pagination controls
-    cols = st.columns([1, 2, 1])
-    
-    with cols[0]:
-        if page > 1:
-            if st.button("← Previous", key=f"prev_{is_helpful}_{page}", use_container_width=True):
-                if is_helpful:
-                    st.session_state.helpful_foods_page = max(1, page - 1)
-                else:
-                    st.session_state.challenging_foods_page = max(1, page - 1)
-    
-    with cols[1]:
-        st.markdown(f"<div style='text-align: center'>Page {page} of {total_pages}</div>", unsafe_allow_html=True)
-    
-    with cols[2]:
-        if page < total_pages:
-            if st.button("Next →", key=f"next_{is_helpful}_{page}", use_container_width=True):
-                if is_helpful:
-                    st.session_state.helpful_foods_page = min(total_pages, page + 1)
-                else:
-                    st.session_state.challenging_foods_page = min(total_pages, page + 1)
