@@ -61,6 +61,12 @@ if "household_members" not in st.session_state:
     st.session_state.household_members = []
 if "meal_preferences" not in st.session_state:
     st.session_state.meal_preferences = {}
+if "helpful_foods_page" not in st.session_state:
+    st.session_state.helpful_foods_page = 1
+if "challenging_foods_page" not in st.session_state:
+    st.session_state.challenging_foods_page = 1
+if "items_per_page" not in st.session_state:
+    st.session_state.items_per_page = 5
 
 # --- Model Selection ---
 st.sidebar.title("Model Selection")
@@ -515,16 +521,13 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
 
         # Display helpful foods
         if 'helpful_foods_content' in st.session_state:
-            # Split content to find and format the intro sentence
-            content_parts = st.session_state.helpful_foods_content.split("\n\n")
-            if content_parts:
+            content_parts = st.session_state.helpful_foods_content.split("\n\n", 1)
+            if len(content_parts) > 1:
                 intro = content_parts[0]
-                items = "\n\n".join(content_parts[1:])
+                items_content = content_parts[1]
                 st.markdown(intro)
                 st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #2e7d32; margin-top: 1.5em; margin-bottom: 1em;'>Here are some items from your list that can be particularly helpful in managing blood sugar:</h3>", unsafe_allow_html=True)
-                st.markdown(items)
-            else:
-                st.markdown(st.session_state.helpful_foods_content)
+                display_paginated_foods(items_content, st.session_state.helpful_foods_page, is_helpful=True)
             st.info(f"Helpful foods analysis completed in {st.session_state.helpful_processing_time:.2f} seconds")
 
         # Process challenging foods in background if not already done
@@ -645,23 +648,20 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
 
         # Display challenging foods if available
         if 'challenging_foods_content' in st.session_state:
-            # Remove the redundant intro paragraph and update the section header
             content = st.session_state.challenging_foods_content
-            if "Here are a few items that might require a bit more planning:" in content:
-                # Remove any intro paragraph before the section header
-                content = content.split("Here are a few items that might require a bit more planning:", 1)[1]
-            
-            # Add our new header with matching style
             st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #c62828; margin-top: 1.5em; margin-bottom: 1em;'>Now let's take a look at food items that could be a bit more challenging:</h3>", unsafe_allow_html=True)
             
-            # Format the Top Tips header
+            # Split content into foods and tips sections
             if "💡 **Top Tips for Blood Sugar Stability**" in content:
-                content = content.replace(
-                    "💡 **Top Tips for Blood Sugar Stability**", 
-                    "<h3 style='font-size: 1.5rem; font-weight: 600; color: #1565c0; margin-top: 1.5em; margin-bottom: 1em;'>💡 Top Tips for Blood Sugar Stability</h3>"
-                )
+                foods_section, tips_section = content.split("💡 **Top Tips for Blood Sugar Stability**", 1)
+                display_paginated_foods(foods_section, st.session_state.challenging_foods_page, is_helpful=False)
+                
+                # Display tips section with styled header
+                st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #1565c0; margin-top: 1.5em; margin-bottom: 1em;'>💡 Top Tips for Blood Sugar Stability</h3>", unsafe_allow_html=True)
+                st.markdown(tips_section)
+            else:
+                display_paginated_foods(content, st.session_state.challenging_foods_page, is_helpful=False)
             
-            st.markdown(content, unsafe_allow_html=True)
             st.info(f"Challenging foods analysis completed in {st.session_state.challenging_processing_time:.2f} seconds")
 
     except Exception as e:
@@ -679,3 +679,82 @@ if st.session_state.processing_times:
         st.sidebar.markdown(f"**{step.replace('_', ' ').title()}:**")
         for model, time_taken in times.items():
             st.sidebar.markdown(f"- {model}: {time_taken:.2f} seconds")
+
+def parse_food_items(content):
+    """Parse food items from the content, maintaining exact formatting."""
+    # Split by double newlines to separate items
+    items = []
+    current_item = []
+    in_food_item = False
+    
+    for line in content.split('\n'):
+        # Check if this is the start of a food item
+        if '**' in line and ':' in line and not line.startswith('💡'):
+            # If we were already processing an item, save it
+            if current_item:
+                items.append('\n'.join(current_item))
+            # Start new item
+            current_item = [line]
+            in_food_item = True
+        elif in_food_item:
+            # Add lines to current item
+            current_item.append(line)
+            # If we hit an empty line after collecting some content, end the item
+            if not line.strip() and len(current_item) > 1:
+                items.append('\n'.join(current_item))
+                current_item = []
+                in_food_item = False
+    
+    # Add the last item if there is one
+    if current_item:
+        items.append('\n'.join(current_item))
+    
+    return items
+
+def display_paginated_foods(content, page, is_helpful=True):
+    """Display food items with pagination."""
+    if not content:
+        return
+
+    # Parse the content into individual food items
+    food_items = parse_food_items(content)
+    
+    if not food_items:
+        return
+    
+    # Calculate pagination
+    start_idx = (page - 1) * st.session_state.items_per_page
+    end_idx = start_idx + st.session_state.items_per_page
+    total_pages = (len(food_items) + st.session_state.items_per_page - 1) // st.session_state.items_per_page
+    
+    # Display current page items
+    displayed_items = food_items[start_idx:end_idx]
+    for item in displayed_items:
+        st.markdown(item)
+        st.markdown("---")
+    
+    # Only show pagination if there are more items than items_per_page
+    if len(food_items) > st.session_state.items_per_page:
+        st.markdown("---")
+        cols = st.columns([1, 2, 1])
+        
+        with cols[0]:
+            if page > 1:
+                if st.button("← Previous", key=f"prev_{is_helpful}_{page}"):
+                    if is_helpful:
+                        st.session_state.helpful_foods_page -= 1
+                    else:
+                        st.session_state.challenging_foods_page -= 1
+                    st.rerun()
+        
+        with cols[1]:
+            st.markdown(f"<div style='text-align: center'>Page {page} of {total_pages} ({len(food_items)} items total)</div>", unsafe_allow_html=True)
+        
+        with cols[2]:
+            if page < total_pages:
+                if st.button("Next →", key=f"next_{is_helpful}_{page}"):
+                    if is_helpful:
+                        st.session_state.helpful_foods_page += 1
+                    else:
+                        st.session_state.challenging_foods_page += 1
+                    st.rerun()
