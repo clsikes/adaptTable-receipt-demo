@@ -447,7 +447,7 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
 
         STEP 2: Analyze Helpful Foods
         For each food that supports blood sugar control (low-GI, high-fiber, high-protein, or rich in healthy fats):
-        - List at least 5-7 items from their shopping list
+        - Identify all relevant items from their shopping list
         - Use appropriate food icons (🥑 for avocado, 🥛 for milk, 🥬 for vegetables, etc.)
         - Format each item EXACTLY as follows with double line breaks between items:
           **🥑 Food Item:** [name]  
@@ -464,7 +464,7 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
         - Use a friendly, informative tone that builds confidence
         - Keep explanations evidence-based and specific
         - Use appropriate food icons that match the items
-        - Analyze at least 5-7 items
+        - Analyze ALL relevant items from the shopping list
         - Keep the output under ~500 words
         - Do not show the steps or internal structure to the user
         - IMPORTANT: Use double line breaks between each food item to ensure proper formatting
@@ -543,7 +543,7 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
 
             STEP 1: Analyze Challenging Foods
             For each food that may hinder blood sugar control (high-GI, refined carbs, low fiber, low protein, or high in added sugar):
-            - List at least 5-7 items from their shopping list
+            - Identify all relevant items from their shopping list
             - Use appropriate food icons (🍞 for bread, 🍪 for cookies, 🥤 for sugary drinks, etc.)
             - Format each item EXACTLY as follows with double line breaks between items:
               **[icon] Food Item:** [name]  
@@ -595,7 +595,7 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
             - Use a friendly, informative tone that builds confidence
             - Keep explanations evidence-based and specific
             - Use appropriate food icons that match the items
-            - Analyze at least 5-7 items
+            - Analyze ALL relevant items from the shopping list
             - Keep the output under ~500 words
             - Do not show the steps or internal structure to the user
             - Maintain the exact wording of the top tips section, only personalizing the bracketed examples
