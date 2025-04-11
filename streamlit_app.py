@@ -734,6 +734,9 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
                         st.markdown(modified_part, unsafe_allow_html=True)
                     else:
                         st.markdown(part)
+            
+            # Add processing time info for helpful foods
+            st.info(f"Helpful foods analysis completed in {st.session_state.helpful_processing_time:.2f} seconds")
 
         # Add challenging_foods_prompt definition before the challenging foods processing section
         challenging_foods_prompt = f"""
@@ -751,10 +754,17 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
 
         ---
 
-        STEP 1: Analyze Challenging Foods
+        STEP 1: Write a Conversational Introduction
+        Start with a friendly, personalized introduction that:
+        - Acknowledges their shopping choices
+        - Sets up the purpose of the analysis
+        - Creates a supportive, non-judgmental tone
+        Example: "Okay, let's take a look at your recent grocery haul and see how these items fit into managing blood sugar for Type 1 Diabetes. Remember, managing T1D is about balance, not restriction! This info can help you make informed choices."
+
+        STEP 2: Analyze Challenging Foods
         For each food that may hinder blood sugar control (high-GI, refined carbs, low fiber, low protein, or high in added sugar):
         - Identify all relevant items from their shopping list
-        - Use appropriate food icons (🍞 for bread, 🍪 for cookies, 🥤 for sugary drinks, etc.)
+        - Use appropriate food icons (🎂 for cake, 🧁 for cupcakes/muffins, 🍞 for bread, etc.)
         - Format each item EXACTLY as follows with double line breaks between items:
           **[icon] Food Item:** [name]  
           
@@ -762,42 +772,9 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
           
           **✅ Try Instead:** [specific alternative with better glycemic profile]  
           
-          **🔄 Adaptation Tip:** Suggest how to still use or enjoy this food with adjustments (e.g., pairing with protein, changing timing, reducing portion)
+          **🔄 Adaptation Tip:** [practical suggestions for using/enjoying this food while managing blood sugar]
           
           [Double line break before next item]
-
-        STEP 2: Include Fixed Top Tips Section
-        Always include these specific tips, personalizing only the bracketed examples with items from their shopping list:
-
-        💡 **Top Tips for Blood Sugar Stability**
-
-        **🥚 Savory Breakfast First**  
-        Most people love a sweet start like [insert item if available – e.g., bananas or honey]. But mornings are when your body is more insulin-resistant — so starting with sugary foods can lead to big blood sugar spikes. Have some protein or fat first (e.g., turkey sausage, egg, avocado) to slow down absorption.
-
-        **🥦 Eat Veggies First**  
-        If your meals include pasta, rice, or bread, eat veggies or salad first. The fiber acts like a barrier and slows down carb absorption — making blood sugar easier to manage.
-
-        **🍽️ Eat In This Order:**  
-        Veggies → Protein/Fat → Carbs  
-        This simple order change can dramatically reduce blood sugar spikes.
-
-        **🧬 Pair Your Carbs**  
-        Got bread, granola bars, or crackers? Pair them with nut butter, cheese, or Greek yogurt. The added fat and protein help slow digestion.
-
-        **👟 Move After Meals**  
-        Even 10 minutes of walking after a meal can help flatten your glucose curve and aid digestion.
-
-        **🍏 Juice = Medicine, Not a Drink**  
-        Juice like [insert juice brand if available] works great for treating low blood sugar — but not for sipping throughout the day. Try water with lemon or a splash of juice instead.
-
-        **🥖 Choose Whole Over Processed**  
-        Highly processed foods (like [insert example from cart]) spike blood sugar faster. Opt for whole, fiber-rich versions when you can.
-
-        **🌾 Fiber = Power**  
-        Fiber slows digestion and supports blood sugar balance. Beans, whole grains, lentils, veggies — aim for more!
-
-        **🧘‍♀️ Sleep & Stress Matter**  
-        Poor sleep and stress can raise blood sugar. Prioritize rest and find calming rituals like yoga, walking, or mindfulness.
 
         ✅ RULES:
         - Never make up food items
@@ -808,7 +785,6 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
         - Analyze ALL relevant items from the shopping list
         - Keep explanations concise but informative
         - Do not show the steps or internal structure to the user
-        - Maintain the exact wording of the top tips section, only personalizing the bracketed examples
         - IMPORTANT: Use double line breaks between each food item to ensure proper formatting
 
         Master Shop Record:
@@ -854,9 +830,13 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
 
         # Display challenging foods from session state
         if st.session_state.challenging_foods_content:
+            # Find where the actual food items start (after intro)
             content_parts = st.session_state.challenging_foods_content.split("\n\n")
+            
+            # Display the header
             st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #c62828; margin-top: 1.5em; margin-bottom: 1em;'>Now let's take a look at food items that could be more challenging:</h3>", unsafe_allow_html=True)
             
+            # Process and display food items
             for part in content_parts:
                 if "Food Item:" in part:
                     # Extract the emoji and food item
@@ -865,16 +845,20 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
                     emoji = food_line.split("**")[1].split(" ")[0]
                     food_item = food_line.split("Food Item:")[1].strip()
                     
-                    # Create styled food item header
-                    styled_header = f'<div class="food-item-challenging">{emoji} {food_item}</div>'
+                    # Create styled food item header with consistent format
+                    styled_header = f'<div class="food-item-challenging">{emoji}** {food_item}</div>'
                     
                     # Replace the original food item line with styled version
                     modified_part = part.replace(food_line, styled_header)
                     st.markdown(modified_part, unsafe_allow_html=True)
                 elif "💡 **Top Tips" in part:
                     st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #1565c0; margin-top: 1.5em; margin-bottom: 1em;'>💡 Top Tips for Blood Sugar Stability</h3>", unsafe_allow_html=True)
-                else:
                     st.markdown(part)
+                elif not any(skip in part for skip in ["let's take a look", "Okay,", "Remember, this is about"]):
+                    st.markdown(part)
+            
+            # Add processing time info for challenging foods
+            st.info(f"Challenging foods analysis completed in {st.session_state.challenging_processing_time:.2f} seconds")
 
     except Exception as e:
         st.error("There was a problem generating the food guidance.")
