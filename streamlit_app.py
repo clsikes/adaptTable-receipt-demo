@@ -160,6 +160,14 @@ if "challenging_foods_page" not in st.session_state:
     st.session_state.challenging_foods_page = 1
 if "items_per_page" not in st.session_state:
     st.session_state.items_per_page = 5
+if "helpful_foods_content" not in st.session_state:
+    st.session_state.helpful_foods_content = None
+if "challenging_foods_content" not in st.session_state:
+    st.session_state.challenging_foods_content = None
+if "helpful_foods_parsed" not in st.session_state:
+    st.session_state.helpful_foods_parsed = None
+if "challenging_foods_parsed" not in st.session_state:
+    st.session_state.challenging_foods_parsed = None
 
 # --- Model Selection ---
 st.sidebar.title("Model Selection")
@@ -575,8 +583,8 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
         {st.session_state.master_record}
         """
 
-        # Process helpful foods first if not already in session state
-        if 'helpful_foods_content' not in st.session_state:
+        # Process helpful foods only if not already in session state
+        if st.session_state.helpful_foods_content is None:
             with st.spinner("Analyzing helpful foods in your shopping list..."):
                 start_time = time.time()
                 
@@ -612,8 +620,8 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
                 st.session_state.helpful_foods_content = helpful_foods_output
                 st.session_state.helpful_processing_time = helpful_processing_time
 
-        # Display helpful foods
-        if 'helpful_foods_content' in st.session_state:
+        # Display helpful foods from session state
+        if st.session_state.helpful_foods_content:
             content_parts = st.session_state.helpful_foods_content.split("\n\n", 1)
             if len(content_parts) > 1:
                 intro = content_parts[0]
@@ -621,94 +629,16 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
                 st.markdown(intro)
                 st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #2e7d32; margin-top: 1.5em; margin-bottom: 1em;'>Here are some items from your list that can be particularly helpful in managing blood sugar:</h3>", unsafe_allow_html=True)
                 
-                # Cache the parsed items to avoid reprocessing
-                if "helpful_foods_parsed" not in st.session_state:
+                # Parse items only once and store in session state
+                if st.session_state.helpful_foods_parsed is None:
                     st.session_state.helpful_foods_parsed = parse_food_items(items_content)
                 
-                display_paginated_foods(items_content, st.session_state.helpful_foods_page, is_helpful=True)
-            st.info(f"Helpful foods analysis completed in {st.session_state.helpful_processing_time:.2f} seconds")
+                # Display items using cached parsed content
+                display_paginated_foods_cached(st.session_state.helpful_foods_parsed, st.session_state.helpful_foods_page, is_helpful=True)
+                st.info(f"Helpful foods analysis completed in {st.session_state.helpful_processing_time:.2f} seconds")
 
-        # Process challenging foods in background if not already done
-        if 'challenging_foods_content' not in st.session_state:
-            challenging_foods_prompt = f"""
-            🧠 ROLE:
-            You are a registered dietitian helping a household understand how their recent grocery purchases may affect blood sugar control for someone managing Type 1 Diabetes (T1D).
-
-            🎯 GOAL:
-            From the Master Shopping Record, analyze the food items and produce friendly, fact-based, actionable guidance grounded in nutritional science that:
-            - Helps users understand which foods support or challenge blood sugar control
-            - Explains *why* in clear, evidence-based language
-            - Provides alternatives and practical adaptation tips
-            - Supports decision-making for future shops or conversations with health care providers
-
-            Only use food items that appear in the provided shopping list — never invent or assume new ones.
-
-            ---
-
-            STEP 1: Analyze Challenging Foods
-            For each food that may hinder blood sugar control (high-GI, refined carbs, low fiber, low protein, or high in added sugar):
-            - List at least 5-7 items from their shopping list
-            - Use appropriate food icons (🍞 for bread, 🍪 for cookies, 🥤 for sugary drinks, etc.)
-            - Format each item EXACTLY as follows with double line breaks between items:
-              **[icon] Food Item:** [name]  
-              
-              **❌ Why It May Challenge Control:** [clear, evidence-based explanation]  
-              
-              **✅ Try Instead:** [specific alternative with better glycemic profile]  
-              
-              **🔄 Adaptation Tip:** Suggest how to still use or enjoy this food with adjustments (e.g., pairing with protein, changing timing, reducing portion)
-              
-              [Double line break before next item]
-
-            STEP 2: Include Fixed Top Tips Section
-            Always include these specific tips, personalizing only the bracketed examples with items from their shopping list:
-
-            💡 **Top Tips for Blood Sugar Stability**
-
-            **🥚 Savory Breakfast First**  
-            Most people love a sweet start like [insert item if available – e.g., bananas or honey]. But mornings are when your body is more insulin-resistant — so starting with sugary foods can lead to big blood sugar spikes. Have some protein or fat first (e.g., turkey sausage, egg, avocado) to slow down absorption.
-
-            **🥦 Eat Veggies First**  
-            If your meals include pasta, rice, or bread, eat veggies or salad first. The fiber acts like a barrier and slows down carb absorption — making blood sugar easier to manage.
-
-            **🍽️ Eat In This Order:**  
-            Veggies → Protein/Fat → Carbs  
-            This simple order change can dramatically reduce blood sugar spikes.
-
-            **🧬 Pair Your Carbs**  
-            Got bread, granola bars, or crackers? Pair them with nut butter, cheese, or Greek yogurt. The added fat and protein help slow digestion.
-
-            **👟 Move After Meals**  
-            Even 10 minutes of walking after a meal can help flatten your glucose curve and aid digestion.
-
-            **🍏 Juice = Medicine, Not a Drink**  
-            Juice like [insert juice brand if available] works great for treating low blood sugar — but not for sipping throughout the day. Try water with lemon or a splash of juice instead.
-
-            **🥖 Choose Whole Over Processed**  
-            Highly processed foods (like [insert example from cart]) spike blood sugar faster. Opt for whole, fiber-rich versions when you can.
-
-            **🌾 Fiber = Power**  
-            Fiber slows digestion and supports blood sugar balance. Beans, whole grains, lentils, veggies — aim for more!
-
-            **🧘‍♀️ Sleep & Stress Matter**  
-            Poor sleep and stress can raise blood sugar. Prioritize rest and find calming rituals like yoga, walking, or mindfulness.
-
-            ✅ RULES:
-            - Never make up food items
-            - Do not give medical advice or suggest medication
-            - Use a friendly, informative tone that builds confidence
-            - Keep explanations evidence-based and specific
-            - Use appropriate food icons that match the items
-            - Analyze at least 5-7 items
-            - Keep the output under ~500 words
-            - Do not show the steps or internal structure to the user
-            - Maintain the exact wording of the top tips section, only personalizing the bracketed examples
-            - IMPORTANT: Use double line breaks between each food item to ensure proper formatting
-
-            Master Shop Record:
-            {st.session_state.master_record}
-            """
-
+        # Process challenging foods only if not already in session state
+        if st.session_state.challenging_foods_content is None:
             with st.spinner("Analyzing challenging foods in your shopping list..."):
                 start_time = time.time()
                 
@@ -744,26 +674,28 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
                 st.session_state.challenging_foods_content = challenging_foods_output
                 st.session_state.challenging_processing_time = challenging_processing_time
 
-        # Display challenging foods if available
-        if 'challenging_foods_content' in st.session_state:
+        # Display challenging foods from session state
+        if st.session_state.challenging_foods_content:
             content = st.session_state.challenging_foods_content
             st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #c62828; margin-top: 1.5em; margin-bottom: 1em;'>Now let's take a look at food items that could be a bit more challenging:</h3>", unsafe_allow_html=True)
             
-            # Split content into foods and tips sections
+            # Split content and parse only once
             if "💡 **Top Tips for Blood Sugar Stability**" in content:
-                foods_section, tips_section = content.split("💡 **Top Tips for Blood Sugar Stability**", 1)
-                
-                # Cache the parsed items to avoid reprocessing
-                if "challenging_foods_parsed" not in st.session_state:
+                if st.session_state.challenging_foods_parsed is None:
+                    foods_section, tips_section = content.split("💡 **Top Tips for Blood Sugar Stability**", 1)
                     st.session_state.challenging_foods_parsed = parse_food_items(foods_section)
+                    st.session_state.challenging_foods_tips = tips_section
                 
-                display_paginated_foods(foods_section, st.session_state.challenging_foods_page, is_helpful=False)
+                # Display using cached content
+                display_paginated_foods_cached(st.session_state.challenging_foods_parsed, st.session_state.challenging_foods_page, is_helpful=False)
                 
-                # Display tips section with styled header
+                # Display tips section
                 st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #1565c0; margin-top: 1.5em; margin-bottom: 1em;'>💡 Top Tips for Blood Sugar Stability</h3>", unsafe_allow_html=True)
-                st.markdown(tips_section)
+                st.markdown(st.session_state.challenging_foods_tips)
             else:
-                display_paginated_foods(content, st.session_state.challenging_foods_page, is_helpful=False)
+                if st.session_state.challenging_foods_parsed is None:
+                    st.session_state.challenging_foods_parsed = parse_food_items(content)
+                display_paginated_foods_cached(st.session_state.challenging_foods_parsed, st.session_state.challenging_foods_page, is_helpful=False)
             
             st.info(f"Challenging foods analysis completed in {st.session_state.challenging_processing_time:.2f} seconds")
 
@@ -782,3 +714,50 @@ if st.session_state.processing_times:
         st.sidebar.markdown(f"**{step.replace('_', ' ').title()}:**")
         for model, time_taken in times.items():
             st.sidebar.markdown(f"- {model}: {time_taken:.2f} seconds")
+
+# Add new function for displaying cached items
+def display_paginated_foods_cached(food_items, page, is_helpful=True):
+    """Display food items with pagination using cached items."""
+    if not food_items:
+        return
+    
+    # Only paginate if we have more items than items_per_page
+    if len(food_items) <= st.session_state.items_per_page:
+        # Display all items if we have fewer than items_per_page
+        for item in food_items:
+            st.markdown(item)
+            st.markdown("---")
+        return
+    
+    # Calculate pagination
+    start_idx = (page - 1) * st.session_state.items_per_page
+    end_idx = min(start_idx + st.session_state.items_per_page, len(food_items))
+    total_pages = (len(food_items) + st.session_state.items_per_page - 1) // st.session_state.items_per_page
+    
+    # Display current page items
+    displayed_items = food_items[start_idx:end_idx]
+    for item in displayed_items:
+        st.markdown(item)
+        st.markdown("---")
+    
+    # Show pagination controls
+    cols = st.columns([1, 2, 1])
+    
+    with cols[0]:
+        if page > 1:
+            if st.button("← Previous", key=f"prev_{is_helpful}_{page}", use_container_width=True):
+                if is_helpful:
+                    st.session_state.helpful_foods_page = max(1, page - 1)
+                else:
+                    st.session_state.challenging_foods_page = max(1, page - 1)
+    
+    with cols[1]:
+        st.markdown(f"<div style='text-align: center'>Page {page} of {total_pages}</div>", unsafe_allow_html=True)
+    
+    with cols[2]:
+        if page < total_pages:
+            if st.button("Next →", key=f"next_{is_helpful}_{page}", use_container_width=True):
+                if is_helpful:
+                    st.session_state.helpful_foods_page = min(total_pages, page + 1)
+                else:
+                    st.session_state.challenging_foods_page = min(total_pages, page + 1)
