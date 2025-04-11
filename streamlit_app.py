@@ -535,7 +535,6 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
 
         # Display helpful foods
         if 'helpful_foods_content' in st.session_state:
-            # Split content to find and format the intro sentence
             content_parts = st.session_state.helpful_foods_content.split("\n\n")
             if content_parts:
                 intro = content_parts[0]
@@ -543,18 +542,11 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
                 st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #2e7d32; margin-top: 1.5em; margin-bottom: 1em;'>Here are some items from your list that can be particularly helpful in managing blood sugar:</h3>", unsafe_allow_html=True)
                 
                 for part in content_parts[1:]:
-                    if "Food Item:" in part and "Why It's Great for Blood Sugar Control:" in part:  # Only process helpful foods
-                        # Extract the emoji and food item
+                    if "Food Item:" in part:
                         lines = part.split("\n")
                         food_line = next(line for line in lines if "Food Item:" in line)
-                        emoji = food_line.split("**")[1].split(" ")[0]
-                        food_item = food_line.split("Food Item:")[1].strip()
-                        
-                        # Create styled food item header
-                        styled_header = f'<div class="food-item-helpful">{emoji} {food_item}</div>'
-                        
-                        # Replace the original food item line with styled version
-                        modified_part = part.replace(food_line, styled_header)
+                        # Make food items larger and bolder
+                        modified_part = part.replace(food_line, f'<div style="font-size: 1.2em; font-weight: 600; margin: 1em 0;">{food_line}</div>')
                         st.markdown(modified_part, unsafe_allow_html=True)
                     else:
                         st.markdown(part)
@@ -682,18 +674,11 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
             st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #c62828; margin-top: 1.5em; margin-bottom: 1em;'>Now let's take a look at food items that could be more challenging:</h3>", unsafe_allow_html=True)
             
             for part in content_parts:
-                if "Food Item:" in part and "Why It May Challenge Control:" in part:  # Only process challenging foods
-                    # Extract the emoji and food item
+                if "Food Item:" in part:
                     lines = part.split("\n")
                     food_line = next(line for line in lines if "Food Item:" in line)
-                    emoji = food_line.split("**")[1].split(" ")[0]
-                    food_item = food_line.split("Food Item:")[1].strip()
-                    
-                    # Create styled food item header
-                    styled_header = f'<div class="food-item-challenging">{emoji} {food_item}</div>'
-                    
-                    # Replace the original food item line with styled version
-                    modified_part = part.replace(food_line, styled_header)
+                    # Make food items larger and bolder
+                    modified_part = part.replace(food_line, f'<div style="font-size: 1.2em; font-weight: 600; margin: 1em 0;">{food_line}</div>')
                     st.markdown(modified_part, unsafe_allow_html=True)
                 elif "💡 **Top Tips" in part:
                     st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #1565c0; margin-top: 1.5em; margin-bottom: 1em;'>💡 Top Tips for Blood Sugar Stability</h3>", unsafe_allow_html=True)
