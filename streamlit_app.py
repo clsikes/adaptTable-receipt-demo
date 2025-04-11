@@ -19,13 +19,10 @@ def on_radio_change():
     pass
 
 def on_continue_to_guidance_click():
-    st.session_state.analysis_complete = True
     st.session_state.show_helps_hinders = True
-    # Clear any existing helps/hinders content to ensure fresh generation
-    if 'helpful_foods_content' in st.session_state:
-        del st.session_state.helpful_foods_content
-    if 'challenging_foods_content' in st.session_state:
-        del st.session_state.challenging_foods_content
+
+def on_continue_to_household_click():
+    st.session_state.show_household_form = True
 
 # --- Load Secrets ---
 try:
@@ -58,6 +55,12 @@ if "current_step" not in st.session_state:
     st.session_state.current_step = "upload"
 if "processing_times" not in st.session_state:
     st.session_state.processing_times = {}
+if "show_household_form" not in st.session_state:
+    st.session_state.show_household_form = False
+if "household_members" not in st.session_state:
+    st.session_state.household_members = []
+if "meal_preferences" not in st.session_state:
+    st.session_state.meal_preferences = {}
 
 # --- Model Selection ---
 st.sidebar.title("Model Selection")
@@ -664,6 +667,9 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
     except Exception as e:
         st.error("There was a problem generating the food guidance.")
         st.exception(e)
+
+    # Add a continue button at the end of the food guidance section
+    st.button("Continue to Household Setup", on_click=on_continue_to_household_click)
 
 # --- Performance Metrics ---
 if st.session_state.processing_times:
