@@ -543,7 +543,7 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
                 st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #2e7d32; margin-top: 1.5em; margin-bottom: 1em;'>Here are some items from your list that can be particularly helpful in managing blood sugar:</h3>", unsafe_allow_html=True)
                 
                 for part in content_parts[1:]:
-                    if "Food Item:" in part:
+                    if "Food Item:" in part and "Why It's Great for Blood Sugar Control:" in part:  # Only process helpful foods
                         # Extract the emoji and food item
                         lines = part.split("\n")
                         food_line = next(line for line in lines if "Food Item:" in line)
@@ -682,7 +682,7 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
             st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #c62828; margin-top: 1.5em; margin-bottom: 1em;'>Now let's take a look at food items that could be more challenging:</h3>", unsafe_allow_html=True)
             
             for part in content_parts:
-                if "Food Item:" in part:
+                if "Food Item:" in part and "Why It May Challenge Control:" in part:  # Only process challenging foods
                     # Extract the emoji and food item
                     lines = part.split("\n")
                     food_line = next(line for line in lines if "Food Item:" in line)
