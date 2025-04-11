@@ -26,32 +26,40 @@ def on_continue_to_household_click():
 
 def parse_food_items(content):
     """Parse food items from the content, maintaining exact formatting."""
-    # Split by double newlines to separate items
     items = []
     current_item = []
     in_food_item = False
     
-    for line in content.split('\n'):
-        # Check if this is the start of a food item
+    lines = content.split('\n')
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        
+        # Check if this is the start of a food item (contains both ** and :)
         if '**' in line and ':' in line and not line.startswith('💡'):
             # If we were already processing an item, save it
             if current_item:
-                items.append('\n'.join(current_item))
-            # Start new item
-            current_item = [line]
-            in_food_item = True
-        elif in_food_item:
-            # Add lines to current item
-            current_item.append(line)
-            # If we hit an empty line after collecting some content, end the item
-            if not line.strip() and len(current_item) > 1:
-                items.append('\n'.join(current_item))
+                items.append('\n\n'.join(current_item))
                 current_item = []
-                in_food_item = False
+            
+            # Start collecting the new item
+            current_item = [lines[i]]
+            i += 1
+            
+            # Collect all lines until we hit a double newline or another food item
+            while i < len(lines):
+                if '**' in lines[i] and ':' in lines[i] and not lines[i].startswith('💡'):
+                    i -= 1  # Back up one line so we catch this in the next iteration
+                    break
+                if lines[i].strip() or current_item[-1].strip():  # Only add if current line or previous line is not empty
+                    current_item.append(lines[i])
+                i += 1
+        else:
+            i += 1
     
     # Add the last item if there is one
     if current_item:
-        items.append('\n'.join(current_item))
+        items.append('\n\n'.join(current_item))
     
     return items
 
@@ -66,9 +74,17 @@ def display_paginated_foods(content, page, is_helpful=True):
     if not food_items:
         return
     
+    # Only paginate if we have more items than items_per_page
+    if len(food_items) <= st.session_state.items_per_page:
+        # Display all items if we have fewer than items_per_page
+        for item in food_items:
+            st.markdown(item)
+            st.markdown("---")
+        return
+    
     # Calculate pagination
     start_idx = (page - 1) * st.session_state.items_per_page
-    end_idx = start_idx + st.session_state.items_per_page
+    end_idx = min(start_idx + st.session_state.items_per_page, len(food_items))
     total_pages = (len(food_items) + st.session_state.items_per_page - 1) // st.session_state.items_per_page
     
     # Display current page items
@@ -77,31 +93,29 @@ def display_paginated_foods(content, page, is_helpful=True):
         st.markdown(item)
         st.markdown("---")
     
-    # Only show pagination if there are more items than items_per_page
-    if len(food_items) > st.session_state.items_per_page:
-        st.markdown("---")
-        cols = st.columns([1, 2, 1])
-        
-        with cols[0]:
-            if page > 1:
-                if st.button("← Previous", key=f"prev_{is_helpful}_{page}"):
-                    if is_helpful:
-                        st.session_state.helpful_foods_page -= 1
-                    else:
-                        st.session_state.challenging_foods_page -= 1
-                    st.rerun()
-        
-        with cols[1]:
-            st.markdown(f"<div style='text-align: center'>Page {page} of {total_pages} ({len(food_items)} items total)</div>", unsafe_allow_html=True)
-        
-        with cols[2]:
-            if page < total_pages:
-                if st.button("Next →", key=f"next_{is_helpful}_{page}"):
-                    if is_helpful:
-                        st.session_state.helpful_foods_page += 1
-                    else:
-                        st.session_state.challenging_foods_page += 1
-                    st.rerun()
+    # Show pagination controls only if we have more than items_per_page items
+    cols = st.columns([1, 2, 1])
+    
+    with cols[0]:
+        if page > 1:
+            if st.button("← Previous", key=f"prev_{is_helpful}_{page}", use_container_width=True):
+                if is_helpful:
+                    st.session_state.helpful_foods_page -= 1
+                else:
+                    st.session_state.challenging_foods_page -= 1
+                st.rerun()
+    
+    with cols[1]:
+        st.markdown(f"<div style='text-align: center'>Page {page} of {total_pages} ({len(food_items)} items)</div>", unsafe_allow_html=True)
+    
+    with cols[2]:
+        if page < total_pages:
+            if st.button("Next →", key=f"next_{is_helpful}_{page}", use_container_width=True):
+                if is_helpful:
+                    st.session_state.helpful_foods_page += 1
+                else:
+                    st.session_state.challenging_foods_page += 1
+                st.rerun()
 
 # --- Load Secrets ---
 try:
