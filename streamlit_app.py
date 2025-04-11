@@ -42,33 +42,42 @@ def display_paginated_foods_cached(food_items, page, is_helpful=True):
     end_idx = min(start_idx + st.session_state.items_per_page, len(food_items))
     total_pages = (len(food_items) + st.session_state.items_per_page - 1) // st.session_state.items_per_page
     
-    # Display current page items
-    displayed_items = food_items[start_idx:end_idx]
-    for item in displayed_items:
-        st.markdown(item)
-        st.markdown("---")
+    # Create a container for the items to prevent rerendering
+    items_container = st.container()
+    with items_container:
+        # Display current page items
+        displayed_items = food_items[start_idx:end_idx]
+        for item in displayed_items:
+            st.markdown(item)
+            st.markdown("---")
     
-    # Show pagination controls
-    cols = st.columns([1, 2, 1])
-    
-    with cols[0]:
-        if page > 1:
-            if st.button("← Previous", key=f"prev_{is_helpful}_{page}", use_container_width=True):
-                if is_helpful:
-                    st.session_state.helpful_foods_page = max(1, page - 1)
-                else:
-                    st.session_state.challenging_foods_page = max(1, page - 1)
-    
-    with cols[1]:
-        st.markdown(f"<div style='text-align: center'>Page {page} of {total_pages}</div>", unsafe_allow_html=True)
-    
-    with cols[2]:
-        if page < total_pages:
-            if st.button("Next →", key=f"next_{is_helpful}_{page}", use_container_width=True):
-                if is_helpful:
-                    st.session_state.helpful_foods_page = min(total_pages, page + 1)
-                else:
-                    st.session_state.challenging_foods_page = min(total_pages, page + 1)
+    # Show pagination controls in a separate container
+    pagination_container = st.container()
+    with pagination_container:
+        cols = st.columns([1, 2, 1])
+        
+        with cols[0]:
+            if page > 1:
+                if st.button("← Previous", key=f"prev_{is_helpful}_{page}", use_container_width=True):
+                    if is_helpful:
+                        st.session_state.helpful_foods_page = max(1, page - 1)
+                        st.rerun()  # Only rerun when page actually changes
+                    else:
+                        st.session_state.challenging_foods_page = max(1, page - 1)
+                        st.rerun()  # Only rerun when page actually changes
+        
+        with cols[1]:
+            st.markdown(f"<div style='text-align: center'>Page {page} of {total_pages}</div>", unsafe_allow_html=True)
+        
+        with cols[2]:
+            if page < total_pages:
+                if st.button("Next →", key=f"next_{is_helpful}_{page}", use_container_width=True):
+                    if is_helpful:
+                        st.session_state.helpful_foods_page = min(total_pages, page + 1)
+                        st.rerun()  # Only rerun when page actually changes
+                    else:
+                        st.session_state.challenging_foods_page = min(total_pages, page + 1)
+                        st.rerun()  # Only rerun when page actually changes
 
 def parse_food_items(content):
     """Parse food items from the content, maintaining exact formatting."""
@@ -86,26 +95,25 @@ def parse_food_items(content):
         if '**' in line and 'Food Item:' in line and not line.startswith('💡'):
             # If we were already processing an item, save it
             if current_item:
-                items.append('\n'.join(current_item))
+                items.append('\n\n'.join(current_item))  # Use double newline to maintain spacing
                 current_item = []
             
             # Start collecting the new item
-            current_item = [lines[i]]
+            current_item = [line]  # First line: Food Item
             i += 1
             
-            # Keep collecting lines until we find the start of another food item or reach the end
-            while i < len(lines):
-                if i + 1 < len(lines) and '**' in lines[i + 1] and 'Food Item:' in lines[i + 1]:
-                    break
-                if lines[i].strip():  # Only add non-empty lines
-                    current_item.append(lines[i])
+            # Collect the next lines (Why Great/Challenging, How to Use/Try Instead, Adaptation)
+            while i < len(lines) and len(current_item) < 4:  # Max 4 lines per item
+                line = lines[i].strip()
+                if line and '**' in line:  # Only add lines that start with ** (formatted sections)
+                    current_item.append(line)
                 i += 1
         else:
             i += 1
     
     # Add the last item if there is one
     if current_item:
-        items.append('\n'.join(current_item))
+        items.append('\n\n'.join(current_item))
     
     return items
 
