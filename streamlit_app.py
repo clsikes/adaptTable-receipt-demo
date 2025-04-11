@@ -8,30 +8,6 @@ import toml
 import time
 import google.generativeai as genai
 
-# Add custom CSS for food items
-st.markdown("""
-<style>
-.food-item-helpful {
-    background-color: #e8f5e9;
-    padding: 15px;
-    border-radius: 8px;
-    margin: 15px 0;
-    font-size: 1.2em;
-    font-weight: 600;
-    color: #2e7d32;
-}
-.food-item-challenging {
-    background-color: #ffebee;
-    padding: 15px;
-    border-radius: 8px;
-    margin: 15px 0;
-    font-size: 1.2em;
-    font-weight: 600;
-    color: #c62828;
-}
-</style>
-""", unsafe_allow_html=True)
-
 # --- Callback Function ---
 def on_continue_click():
     st.session_state.analysis_complete = True
@@ -43,161 +19,13 @@ def on_radio_change():
     pass
 
 def on_continue_to_guidance_click():
+    st.session_state.analysis_complete = True
     st.session_state.show_helps_hinders = True
-
-def on_continue_to_household_click():
-    st.session_state.show_household_form = True
-
-def display_paginated_foods_cached(food_items, page, is_helpful=True):
-    """Display food items with pagination using cached items."""
-    if not food_items:
-        return
-    
-    # Only paginate if we have more items than items_per_page
-    if len(food_items) <= st.session_state.items_per_page:
-        # Display all items if we have fewer than items_per_page
-        for item in food_items:
-            st.markdown(item)
-            st.markdown("---")
-        return
-    
-    # Calculate pagination
-    start_idx = (page - 1) * st.session_state.items_per_page
-    end_idx = min(start_idx + st.session_state.items_per_page, len(food_items))
-    total_pages = (len(food_items) + st.session_state.items_per_page - 1) // st.session_state.items_per_page
-    
-    # Create a container for the items to prevent rerendering
-    items_container = st.container()
-    with items_container:
-        # Display current page items
-        displayed_items = food_items[start_idx:end_idx]
-        for item in displayed_items:
-            st.markdown(item)
-            st.markdown("---")
-    
-    # Show pagination controls in a separate container
-    pagination_container = st.container()
-    with pagination_container:
-        cols = st.columns([1, 2, 1])
-        
-        with cols[0]:
-            if page > 1:
-                # Use a unique key for each button to prevent conflicts
-                prev_key = f"prev_{is_helpful}_{page}"
-                if st.button("← Previous", key=prev_key, use_container_width=True):
-                    if is_helpful:
-                        st.session_state.helpful_foods_page = max(1, page - 1)
-                    else:
-                        st.session_state.challenging_foods_page = max(1, page - 1)
-        
-        with cols[1]:
-            st.markdown(f"<div style='text-align: center'>Page {page} of {total_pages}</div>", unsafe_allow_html=True)
-        
-        with cols[2]:
-            if page < total_pages:
-                # Use a unique key for each button to prevent conflicts
-                next_key = f"next_{is_helpful}_{page}"
-                if st.button("Next →", key=next_key, use_container_width=True):
-                    if is_helpful:
-                        st.session_state.helpful_foods_page = min(total_pages, page + 1)
-                    else:
-                        st.session_state.challenging_foods_page = min(total_pages, page + 1)
-
-def parse_food_items(content):
-    """Parse food items from the content, maintaining exact formatting."""
-    items = []
-    current_item = []
-    
-    # Split content into lines
-    lines = content.split('\n')
-    i = 0
-    
-    while i < len(lines):
-        line = lines[i].strip()
-        
-        # Check if this is the start of a food item (contains both ** and Food Item:)
-        if '**' in line and 'Food Item:' in line and not line.startswith('💡'):
-            # If we were already processing an item, save it
-            if current_item:
-                items.append('\n\n'.join(current_item))  # Use double newline to maintain spacing
-                current_item = []
-            
-            # Start collecting the new item
-            current_item = [line]  # First line: Food Item
-            i += 1
-            
-            # Keep collecting lines until we find the next food item or reach the end
-            while i < len(lines):
-                line = lines[i].strip()
-                if line:  # Only add non-empty lines
-                    if '**' in line and 'Food Item:' in line:  # Next food item found
-                        i -= 1  # Back up one line so the next food item is processed
-                        break
-                    if '💡 **Top Tips' in line:  # Stop at Top Tips section
-                        break
-                    current_item.append(line)
-                i += 1
-        else:
-            i += 1
-    
-    # Add the last item if there is one
-    if current_item:
-        items.append('\n\n'.join(current_item))
-    
-    return items
-
-def display_paginated_foods(content, page, is_helpful=True):
-    """Display food items with pagination, keeping item groups together."""
-    if not content:
-        return
-
-    # Parse the content into individual food items (each item includes its full description)
-    food_items = parse_food_items(content)
-    
-    if not food_items:
-        return
-    
-    # Only paginate if we have more items than items_per_page
-    if len(food_items) <= st.session_state.items_per_page:
-        # Display all items if we have fewer than items_per_page
-        for item in food_items:
-            st.markdown(item)
-            st.markdown("---")
-        return
-    
-    # Calculate pagination
-    start_idx = (page - 1) * st.session_state.items_per_page
-    end_idx = min(start_idx + st.session_state.items_per_page, len(food_items))
-    total_pages = (len(food_items) + st.session_state.items_per_page - 1) // st.session_state.items_per_page
-    
-    # Display current page items
-    displayed_items = food_items[start_idx:end_idx]
-    for item in displayed_items:
-        st.markdown(item)
-        st.markdown("---")
-    
-    # Show pagination controls only if we have more than items_per_page items
-    cols = st.columns([1, 2, 1])
-    
-    with cols[0]:
-        if page > 1:
-            # Store the current page in session state
-            if st.button("← Previous", key=f"prev_{is_helpful}_{page}", use_container_width=True):
-                if is_helpful:
-                    st.session_state.helpful_foods_page = max(1, st.session_state.helpful_foods_page - 1)
-                else:
-                    st.session_state.challenging_foods_page = max(1, st.session_state.challenging_foods_page - 1)
-    
-    with cols[1]:
-        st.markdown(f"<div style='text-align: center'>Page {page} of {total_pages}</div>", unsafe_allow_html=True)
-    
-    with cols[2]:
-        if page < total_pages:
-            if st.button("Next →", key=f"next_{is_helpful}_{page}", use_container_width=True):
-                if is_helpful:
-                    st.session_state.helpful_foods_page = min(total_pages, st.session_state.helpful_foods_page + 1)
-                else:
-                    st.session_state.challenging_foods_page = min(total_pages, st.session_state.challenging_foods_page + 1)
+    # Clear any existing helps/hinders content to ensure fresh generation
+    if 'helpful_foods_content' in st.session_state:
+        del st.session_state.helpful_foods_content
+    if 'challenging_foods_content' in st.session_state:
+        del st.session_state.challenging_foods_content
 
 # --- Load Secrets ---
 try:
@@ -230,34 +58,6 @@ if "current_step" not in st.session_state:
     st.session_state.current_step = "upload"
 if "processing_times" not in st.session_state:
     st.session_state.processing_times = {}
-if "show_household_form" not in st.session_state:
-    st.session_state.show_household_form = False
-if "household_members" not in st.session_state:
-    st.session_state.household_members = []
-if "meal_preferences" not in st.session_state:
-    st.session_state.meal_preferences = {}
-if "helpful_foods_page" not in st.session_state:
-    st.session_state.helpful_foods_page = 1
-if "challenging_foods_page" not in st.session_state:
-    st.session_state.challenging_foods_page = 1
-if "items_per_page" not in st.session_state:
-    st.session_state.items_per_page = 5
-if "helpful_foods_content" not in st.session_state:
-    st.session_state.helpful_foods_content = None
-if "challenging_foods_content" not in st.session_state:
-    st.session_state.challenging_foods_content = None
-if "helpful_foods_parsed" not in st.session_state:
-    st.session_state.helpful_foods_parsed = None
-if "challenging_foods_parsed" not in st.session_state:
-    st.session_state.challenging_foods_parsed = None
-if "show_all_helpful" not in st.session_state:
-    st.session_state.show_all_helpful = False
-if "show_all_challenging" not in st.session_state:
-    st.session_state.show_all_challenging = False
-if "helpful_processing_time" not in st.session_state:
-    st.session_state.helpful_processing_time = 0.0
-if "challenging_processing_time" not in st.session_state:
-    st.session_state.challenging_processing_time = 0.0
 
 # --- Model Selection ---
 st.sidebar.title("Model Selection")
@@ -647,7 +447,7 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
 
         STEP 2: Analyze Helpful Foods
         For each food that supports blood sugar control (low-GI, high-fiber, high-protein, or rich in healthy fats):
-        - Identify all relevant items from their shopping list
+        - List at least 5-7 items from their shopping list
         - Use appropriate food icons (🥑 for avocado, 🥛 for milk, 🥬 for vegetables, etc.)
         - Format each item EXACTLY as follows with double line breaks between items:
           **🥑 Food Item:** [name]  
@@ -664,8 +464,8 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
         - Use a friendly, informative tone that builds confidence
         - Keep explanations evidence-based and specific
         - Use appropriate food icons that match the items
-        - Analyze ALL relevant items from the shopping list
-        - Keep explanations concise but informative
+        - Analyze at least 5-7 items
+        - Keep the output under ~500 words
         - Do not show the steps or internal structure to the user
         - IMPORTANT: Use double line breaks between each food item to ensure proper formatting
 
@@ -673,8 +473,8 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
         {st.session_state.master_record}
         """
 
-        # Process helpful foods only if not already in session state
-        if st.session_state.helpful_foods_content is None:
+        # Process helpful foods first if not already in session state
+        if 'helpful_foods_content' not in st.session_state:
             with st.spinner("Analyzing helpful foods in your shopping list..."):
                 start_time = time.time()
                 
@@ -710,89 +510,101 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
                 st.session_state.helpful_foods_content = helpful_foods_output
                 st.session_state.helpful_processing_time = helpful_processing_time
 
-        # Display helpful foods from session state
-        if st.session_state.helpful_foods_content:
+        # Display helpful foods
+        if 'helpful_foods_content' in st.session_state:
+            # Split content to find and format the intro sentence
             content_parts = st.session_state.helpful_foods_content.split("\n\n")
             if content_parts:
                 intro = content_parts[0]
+                items = "\n\n".join(content_parts[1:])
                 st.markdown(intro)
                 st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #2e7d32; margin-top: 1.5em; margin-bottom: 1em;'>Here are some items from your list that can be particularly helpful in managing blood sugar:</h3>", unsafe_allow_html=True)
-                
-                for part in content_parts[1:]:
-                    if "Food Item:" in part:
-                        # Extract the emoji and food item
-                        lines = part.split("\n")
-                        food_line = next(line for line in lines if "Food Item:" in line)
-                        emoji = food_line.split("**")[1].split(" ")[0]
-                        food_item = food_line.split("Food Item:")[1].strip()
-                        
-                        # Create styled food item header
-                        styled_header = f'<div class="food-item-helpful">{emoji} {food_item}</div>'
-                        
-                        # Replace the original food item line with styled version
-                        modified_part = part.replace(food_line, styled_header)
-                        st.markdown(modified_part, unsafe_allow_html=True)
-                    else:
-                        st.markdown(part)
-            
-            # Add processing time info for helpful foods
+                st.markdown(items)
+            else:
+                st.markdown(st.session_state.helpful_foods_content)
             st.info(f"Helpful foods analysis completed in {st.session_state.helpful_processing_time:.2f} seconds")
 
-        # Add challenging_foods_prompt definition before the challenging foods processing section
-        challenging_foods_prompt = f"""
-        🧠 ROLE:
-        You are a registered dietitian helping a household understand how their recent grocery purchases may affect blood sugar control for someone managing Type 1 Diabetes (T1D).
+        # Process challenging foods in background if not already done
+        if 'challenging_foods_content' not in st.session_state:
+            challenging_foods_prompt = f"""
+            🧠 ROLE:
+            You are a registered dietitian helping a household understand how their recent grocery purchases may affect blood sugar control for someone managing Type 1 Diabetes (T1D).
 
-        🎯 GOAL:
-        From the Master Shopping Record, analyze the food items and produce friendly, fact-based, actionable guidance grounded in nutritional science that:
-        - Helps users understand which foods support or challenge blood sugar control
-        - Explains *why* in clear, evidence-based language
-        - Provides alternatives and practical adaptation tips
-        - Supports decision-making for future shops or conversations with health care providers
+            🎯 GOAL:
+            From the Master Shopping Record, analyze the food items and produce friendly, fact-based, actionable guidance grounded in nutritional science that:
+            - Helps users understand which foods support or challenge blood sugar control
+            - Explains *why* in clear, evidence-based language
+            - Provides alternatives and practical adaptation tips
+            - Supports decision-making for future shops or conversations with health care providers
 
-        Only use food items that appear in the provided shopping list — never invent or assume new ones.
+            Only use food items that appear in the provided shopping list — never invent or assume new ones.
 
-        ---
+            ---
 
-        STEP 1: Write a Conversational Introduction
-        Start with a friendly, personalized introduction that:
-        - Acknowledges their shopping choices
-        - Sets up the purpose of the analysis
-        - Creates a supportive, non-judgmental tone
-        Example: "Okay, let's take a look at your recent grocery haul and see how these items fit into managing blood sugar for Type 1 Diabetes. Remember, managing T1D is about balance, not restriction! This info can help you make informed choices."
+            STEP 1: Analyze Challenging Foods
+            For each food that may hinder blood sugar control (high-GI, refined carbs, low fiber, low protein, or high in added sugar):
+            - List at least 5-7 items from their shopping list
+            - Use appropriate food icons (🍞 for bread, 🍪 for cookies, 🥤 for sugary drinks, etc.)
+            - Format each item EXACTLY as follows with double line breaks between items:
+              **[icon] Food Item:** [name]  
+              
+              **❌ Why It May Challenge Control:** [clear, evidence-based explanation]  
+              
+              **✅ Try Instead:** [specific alternative with better glycemic profile]  
+              
+              **🔄 Adaptation Tip:** Suggest how to still use or enjoy this food with adjustments (e.g., pairing with protein, changing timing, reducing portion)
+              
+              [Double line break before next item]
 
-        STEP 2: Analyze Challenging Foods
-        For each food that may hinder blood sugar control (high-GI, refined carbs, low fiber, low protein, or high in added sugar):
-        - Identify all relevant items from their shopping list
-        - Use appropriate food icons (🎂 for cake, 🧁 for cupcakes/muffins, 🍞 for bread, etc.)
-        - Format each item EXACTLY as follows with double line breaks between items:
-          **[icon] Food Item:** [name]  
-          
-          **❌ Why It May Challenge Control:** [clear, evidence-based explanation]  
-          
-          **✅ Try Instead:** [specific alternative with better glycemic profile]  
-          
-          **🔄 Adaptation Tip:** [practical suggestions for using/enjoying this food while managing blood sugar]
-          
-          [Double line break before next item]
+            STEP 2: Include Fixed Top Tips Section
+            Always include these specific tips, personalizing only the bracketed examples with items from their shopping list:
 
-        ✅ RULES:
-        - Never make up food items
-        - Do not give medical advice or suggest medication
-        - Use a friendly, informative tone that builds confidence
-        - Keep explanations evidence-based and specific
-        - Use appropriate food icons that match the items
-        - Analyze ALL relevant items from the shopping list
-        - Keep explanations concise but informative
-        - Do not show the steps or internal structure to the user
-        - IMPORTANT: Use double line breaks between each food item to ensure proper formatting
+            💡 **Top Tips for Blood Sugar Stability**
 
-        Master Shop Record:
-        {st.session_state.master_record}
-        """
+            **🥚 Savory Breakfast First**  
+            Most people love a sweet start like [insert item if available – e.g., bananas or honey]. But mornings are when your body is more insulin-resistant — so starting with sugary foods can lead to big blood sugar spikes. Have some protein or fat first (e.g., turkey sausage, egg, avocado) to slow down absorption.
 
-        # Process challenging foods only if not already in session state
-        if st.session_state.challenging_foods_content is None:
+            **🥦 Eat Veggies First**  
+            If your meals include pasta, rice, or bread, eat veggies or salad first. The fiber acts like a barrier and slows down carb absorption — making blood sugar easier to manage.
+
+            **🍽️ Eat In This Order:**  
+            Veggies → Protein/Fat → Carbs  
+            This simple order change can dramatically reduce blood sugar spikes.
+
+            **🧬 Pair Your Carbs**  
+            Got bread, granola bars, or crackers? Pair them with nut butter, cheese, or Greek yogurt. The added fat and protein help slow digestion.
+
+            **👟 Move After Meals**  
+            Even 10 minutes of walking after a meal can help flatten your glucose curve and aid digestion.
+
+            **🍏 Juice = Medicine, Not a Drink**  
+            Juice like [insert juice brand if available] works great for treating low blood sugar — but not for sipping throughout the day. Try water with lemon or a splash of juice instead.
+
+            **🥖 Choose Whole Over Processed**  
+            Highly processed foods (like [insert example from cart]) spike blood sugar faster. Opt for whole, fiber-rich versions when you can.
+
+            **🌾 Fiber = Power**  
+            Fiber slows digestion and supports blood sugar balance. Beans, whole grains, lentils, veggies — aim for more!
+
+            **🧘‍♀️ Sleep & Stress Matter**  
+            Poor sleep and stress can raise blood sugar. Prioritize rest and find calming rituals like yoga, walking, or mindfulness.
+
+            ✅ RULES:
+            - Never make up food items
+            - Do not give medical advice or suggest medication
+            - Use a friendly, informative tone that builds confidence
+            - Keep explanations evidence-based and specific
+            - Use appropriate food icons that match the items
+            - Analyze at least 5-7 items
+            - Keep the output under ~500 words
+            - Do not show the steps or internal structure to the user
+            - Maintain the exact wording of the top tips section, only personalizing the bracketed examples
+            - IMPORTANT: Use double line breaks between each food item to ensure proper formatting
+
+            Master Shop Record:
+            {st.session_state.master_record}
+            """
+
             with st.spinner("Analyzing challenging foods in your shopping list..."):
                 start_time = time.time()
                 
@@ -828,44 +640,30 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
                 st.session_state.challenging_foods_content = challenging_foods_output
                 st.session_state.challenging_processing_time = challenging_processing_time
 
-        # Display challenging foods from session state
-        if st.session_state.challenging_foods_content:
-            # Find where the actual food items start (after intro)
-            content_parts = st.session_state.challenging_foods_content.split("\n\n")
+        # Display challenging foods if available
+        if 'challenging_foods_content' in st.session_state:
+            # Remove the redundant intro paragraph and update the section header
+            content = st.session_state.challenging_foods_content
+            if "Here are a few items that might require a bit more planning:" in content:
+                # Remove any intro paragraph before the section header
+                content = content.split("Here are a few items that might require a bit more planning:", 1)[1]
             
-            # Display the header
-            st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #c62828; margin-top: 1.5em; margin-bottom: 1em;'>Now let's take a look at food items that could be more challenging:</h3>", unsafe_allow_html=True)
+            # Add our new header with matching style
+            st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #c62828; margin-top: 1.5em; margin-bottom: 1em;'>Now let's take a look at food items that could be a bit more challenging:</h3>", unsafe_allow_html=True)
             
-            # Process and display food items
-            for part in content_parts:
-                if "Food Item:" in part:
-                    # Extract the emoji and food item
-                    lines = part.split("\n")
-                    food_line = next(line for line in lines if "Food Item:" in line)
-                    emoji = food_line.split("**")[1].split(" ")[0]
-                    food_item = food_line.split("Food Item:")[1].strip()
-                    
-                    # Create styled food item header with consistent format
-                    styled_header = f'<div class="food-item-challenging">{emoji}** {food_item}</div>'
-                    
-                    # Replace the original food item line with styled version
-                    modified_part = part.replace(food_line, styled_header)
-                    st.markdown(modified_part, unsafe_allow_html=True)
-                elif "💡 **Top Tips" in part:
-                    st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #1565c0; margin-top: 1.5em; margin-bottom: 1em;'>💡 Top Tips for Blood Sugar Stability</h3>", unsafe_allow_html=True)
-                    st.markdown(part)
-                elif not any(skip in part for skip in ["let's take a look", "Okay,", "Remember, this is about"]):
-                    st.markdown(part)
+            # Format the Top Tips header
+            if "💡 **Top Tips for Blood Sugar Stability**" in content:
+                content = content.replace(
+                    "💡 **Top Tips for Blood Sugar Stability**", 
+                    "<h3 style='font-size: 1.5rem; font-weight: 600; color: #1565c0; margin-top: 1.5em; margin-bottom: 1em;'>💡 Top Tips for Blood Sugar Stability</h3>"
+                )
             
-            # Add processing time info for challenging foods
+            st.markdown(content, unsafe_allow_html=True)
             st.info(f"Challenging foods analysis completed in {st.session_state.challenging_processing_time:.2f} seconds")
 
     except Exception as e:
         st.error("There was a problem generating the food guidance.")
         st.exception(e)
-
-    # Add a continue button at the end of the food guidance section
-    st.button("Continue to Household Setup", on_click=on_continue_to_household_click)
 
 # --- Performance Metrics ---
 if st.session_state.processing_times:
