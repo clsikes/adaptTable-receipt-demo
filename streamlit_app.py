@@ -857,19 +857,42 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
 
         # Display challenging foods from session state
         if st.session_state.challenging_foods_content:
+            # Split content to find the introduction and items
             content_parts = st.session_state.challenging_foods_content.split("\n\n")
+            
+            # Find where the actual food items start (after intro)
+            intro_index = next((i for i, part in enumerate(content_parts) if "Food **" in part or "🍞 **" in part or "🍪 **" in part), 1)
+            
+            # Display the introduction
+            if intro_index > 0:
+                intro = "\n\n".join(content_parts[:intro_index])
+                st.markdown(intro)
+            
             st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #c62828; margin-top: 1.5em; margin-bottom: 1em;'>Now let's take a look at food items that could be more challenging:</h3>", unsafe_allow_html=True)
             
-            for part in content_parts:
-                if "Food Item:" in part:
-                    # Extract the emoji and food item
+            # Process and display food items
+            for part in content_parts[intro_index:]:
+                if "Food **" in part or "**" in part and any(indicator in part for indicator in ["❌", "✅", "🔄"]):
+                    # Extract the food item name and find appropriate emoji
                     lines = part.split("\n")
-                    food_line = next(line for line in lines if "Food Item:" in line)
-                    # Ensure consistent formatting with helpful foods section
-                    emoji = food_line.split("**")[1].split(" ")[0] if "**" in food_line else "🍽️"  # Default emoji if none found
-                    food_item = food_line.split("Food Item:")[1].strip() if "Food Item:" in food_line else food_line.strip()
+                    food_line = next(line for line in lines if "**" in line)
                     
-                    # Create styled food item header with consistent formatting
+                    # Handle both "Food **" and emoji-prefixed formats
+                    if "Food **" in food_line:
+                        food_item = food_line.split("Food **")[1].strip()
+                        # Determine appropriate emoji based on the food item
+                        emoji_map = {
+                            "Cake": "🎂", "Cupcakes": "🧁", "Brownie": "🍫", "Bread": "🍞",
+                            "Muffins": "🧁", "Corn": "🌽", "Pretzel": "🥨", "Goldfish": "🐠",
+                            "Ketchup": "🍅", "Naan": "🍞"
+                        }
+                        emoji = next((v for k, v in emoji_map.items() if k in food_item), "🍽️")
+                    else:
+                        # Extract existing emoji if present
+                        emoji = food_line.split("**")[1].split(" ")[0]
+                        food_item = food_line.split("**")[1].split(" ", 1)[1].strip()
+                    
+                    # Create styled food item header
                     styled_header = f'<div class="food-item-challenging">{emoji} {food_item}</div>'
                     
                     # Replace the original food item line with styled version
@@ -877,6 +900,7 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
                     st.markdown(modified_part, unsafe_allow_html=True)
                 elif "💡 **Top Tips" in part:
                     st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #1565c0; margin-top: 1.5em; margin-bottom: 1em;'>💡 Top Tips for Blood Sugar Stability</h3>", unsafe_allow_html=True)
+                    st.markdown(part)
                 else:
                     st.markdown(part)
             
