@@ -226,6 +226,10 @@ if "helpful_foods_parsed" not in st.session_state:
     st.session_state.helpful_foods_parsed = None
 if "challenging_foods_parsed" not in st.session_state:
     st.session_state.challenging_foods_parsed = None
+if "show_all_helpful" not in st.session_state:
+    st.session_state.show_all_helpful = False
+if "show_all_challenging" not in st.session_state:
+    st.session_state.show_all_challenging = False
 
 # --- Model Selection ---
 st.sidebar.title("Model Selection")
@@ -680,20 +684,8 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
 
         # Display helpful foods from session state
         if st.session_state.helpful_foods_content:
-            content_parts = st.session_state.helpful_foods_content.split("\n\n", 1)
-            if len(content_parts) > 1:
-                intro = content_parts[0]
-                items_content = content_parts[1]
-                st.markdown(intro)
-                st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #2e7d32; margin-top: 1.5em; margin-bottom: 1em;'>Here are some items from your list that can be particularly helpful in managing blood sugar:</h3>", unsafe_allow_html=True)
-                
-                # Parse items only once and store in session state
-                if st.session_state.helpful_foods_parsed is None:
-                    st.session_state.helpful_foods_parsed = parse_food_items(items_content)
-                
-                # Display items using cached parsed content
-                display_paginated_foods_cached(st.session_state.helpful_foods_parsed, st.session_state.helpful_foods_page, is_helpful=True)
-                st.info(f"Helpful foods analysis completed in {st.session_state.helpful_processing_time:.2f} seconds")
+            display_food_items(st.session_state.helpful_foods_content, is_helpful=True)
+            st.info(f"Helpful foods analysis completed in {st.session_state.helpful_processing_time:.2f} seconds")
 
         # Add challenging_foods_prompt definition before the challenging foods processing section
         challenging_foods_prompt = f"""
@@ -814,27 +806,7 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
 
         # Display challenging foods from session state
         if st.session_state.challenging_foods_content:
-            content = st.session_state.challenging_foods_content
-            st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #c62828; margin-top: 1.5em; margin-bottom: 1em;'>Now let's take a look at food items that could be a bit more challenging:</h3>", unsafe_allow_html=True)
-            
-            # Split content and parse only once
-            if "💡 **Top Tips for Blood Sugar Stability**" in content:
-                if st.session_state.challenging_foods_parsed is None:
-                    foods_section, tips_section = content.split("💡 **Top Tips for Blood Sugar Stability**", 1)
-                    st.session_state.challenging_foods_parsed = parse_food_items(foods_section)
-                    st.session_state.challenging_foods_tips = tips_section
-                
-                # Display using cached content
-                display_paginated_foods_cached(st.session_state.challenging_foods_parsed, st.session_state.challenging_foods_page, is_helpful=False)
-                
-                # Display tips section
-                st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #1565c0; margin-top: 1.5em; margin-bottom: 1em;'>💡 Top Tips for Blood Sugar Stability</h3>", unsafe_allow_html=True)
-                st.markdown(st.session_state.challenging_foods_tips)
-            else:
-                if st.session_state.challenging_foods_parsed is None:
-                    st.session_state.challenging_foods_parsed = parse_food_items(content)
-                display_paginated_foods_cached(st.session_state.challenging_foods_parsed, st.session_state.challenging_foods_page, is_helpful=False)
-            
+            display_food_items(st.session_state.challenging_foods_content, is_helpful=False)
             st.info(f"Challenging foods analysis completed in {st.session_state.challenging_processing_time:.2f} seconds")
 
     except Exception as e:
@@ -852,3 +824,68 @@ if st.session_state.processing_times:
         st.sidebar.markdown(f"**{step.replace('_', ' ').title()}:**")
         for model, time_taken in times.items():
             st.sidebar.markdown(f"- {model}: {time_taken:.2f} seconds")
+
+def display_food_items(content, is_helpful=True):
+    """Display food items with Show All option."""
+    if not content:
+        return
+
+    # Split content to find and format the intro sentence
+    content_parts = content.split("\n\n", 1)
+    if len(content_parts) > 1:
+        intro = content_parts[0]
+        items_content = content_parts[1]
+        
+        # Display intro
+        st.markdown(intro)
+        
+        # Display appropriate header
+        if is_helpful:
+            st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #2e7d32; margin-top: 1.5em; margin-bottom: 1em;'>Here are some items from your list that can be particularly helpful in managing blood sugar:</h3>", unsafe_allow_html=True)
+        else:
+            st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #c62828; margin-top: 1.5em; margin-bottom: 1em;'>Now let's take a look at food items that could be a bit more challenging:</h3>", unsafe_allow_html=True)
+        
+        # Parse items
+        food_items = parse_food_items(items_content)
+        
+        # Create containers for both initial and additional items
+        initial_items = st.container()
+        additional_items = st.container()
+        
+        # Display first 5 items
+        with initial_items:
+            for item in food_items[:5]:
+                st.markdown(item)
+                st.markdown("---")
+        
+        # Show remaining items if there are more than 5
+        if len(food_items) > 5:
+            show_all = st.session_state.show_all_helpful if is_helpful else st.session_state.show_all_challenging
+            
+            if not show_all:
+                if st.button("Show All Items", key=f"show_all_{is_helpful}"):
+                    if is_helpful:
+                        st.session_state.show_all_helpful = True
+                    else:
+                        st.session_state.show_all_challenging = True
+            
+            if show_all:
+                with additional_items:
+                    for item in food_items[5:]:
+                        st.markdown(item)
+                        st.markdown("---")
+        
+        # If this is challenging foods, check for and display Top Tips section
+        if not is_helpful and "💡 **Top Tips for Blood Sugar Stability**" in content:
+            tips_section = content.split("💡 **Top Tips for Blood Sugar Stability**", 1)[1]
+            st.markdown("<h3 style='font-size: 1.5rem; font-weight: 600; color: #1565c0; margin-top: 1.5em; margin-bottom: 1em;'>💡 Top Tips for Blood Sugar Stability</h3>", unsafe_allow_html=True)
+            st.markdown(tips_section)
+
+# In the main display section, replace the existing display code with:
+if 'helpful_foods_content' in st.session_state:
+    display_food_items(st.session_state.helpful_foods_content, is_helpful=True)
+    st.info(f"Helpful foods analysis completed in {st.session_state.helpful_processing_time:.2f} seconds")
+
+if 'challenging_foods_content' in st.session_state:
+    display_food_items(st.session_state.challenging_foods_content, is_helpful=False)
+    st.info(f"Challenging foods analysis completed in {st.session_state.challenging_processing_time:.2f} seconds")
