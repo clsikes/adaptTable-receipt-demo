@@ -102,10 +102,15 @@ def parse_food_items(content):
             current_item = [line]  # First line: Food Item
             i += 1
             
-            # Collect the next lines (Why Great/Challenging, How to Use/Try Instead, Adaptation)
-            while i < len(lines) and len(current_item) < 4:  # Max 4 lines per item
+            # Keep collecting lines until we find the next food item or reach the end
+            while i < len(lines):
                 line = lines[i].strip()
-                if line and '**' in line:  # Only add lines that start with ** (formatted sections)
+                if line:  # Only add non-empty lines
+                    if '**' in line and 'Food Item:' in line:  # Next food item found
+                        i -= 1  # Back up one line so the next food item is processed
+                        break
+                    if '💡 **Top Tips' in line:  # Stop at Top Tips section
+                        break
                     current_item.append(line)
                 i += 1
         else:
@@ -689,6 +694,86 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
                 # Display items using cached parsed content
                 display_paginated_foods_cached(st.session_state.helpful_foods_parsed, st.session_state.helpful_foods_page, is_helpful=True)
                 st.info(f"Helpful foods analysis completed in {st.session_state.helpful_processing_time:.2f} seconds")
+
+        # Add challenging_foods_prompt definition before the challenging foods processing section
+        challenging_foods_prompt = f"""
+        🧠 ROLE:
+        You are a registered dietitian helping a household understand how their recent grocery purchases may affect blood sugar control for someone managing Type 1 Diabetes (T1D).
+
+        🎯 GOAL:
+        From the Master Shopping Record, analyze the food items and produce friendly, fact-based, actionable guidance grounded in nutritional science that:
+        - Helps users understand which foods support or challenge blood sugar control
+        - Explains *why* in clear, evidence-based language
+        - Provides alternatives and practical adaptation tips
+        - Supports decision-making for future shops or conversations with health care providers
+
+        Only use food items that appear in the provided shopping list — never invent or assume new ones.
+
+        ---
+
+        STEP 1: Analyze Challenging Foods
+        For each food that may hinder blood sugar control (high-GI, refined carbs, low fiber, low protein, or high in added sugar):
+        - List at least 5-7 items from their shopping list
+        - Use appropriate food icons (🍞 for bread, 🍪 for cookies, 🥤 for sugary drinks, etc.)
+        - Format each item EXACTLY as follows with double line breaks between items:
+          **[icon] Food Item:** [name]  
+          
+          **❌ Why It May Challenge Control:** [clear, evidence-based explanation]  
+          
+          **✅ Try Instead:** [specific alternative with better glycemic profile]  
+          
+          **🔄 Adaptation Tip:** Suggest how to still use or enjoy this food with adjustments (e.g., pairing with protein, changing timing, reducing portion)
+          
+          [Double line break before next item]
+
+        STEP 2: Include Fixed Top Tips Section
+        Always include these specific tips, personalizing only the bracketed examples with items from their shopping list:
+
+        💡 **Top Tips for Blood Sugar Stability**
+
+        **🥚 Savory Breakfast First**  
+        Most people love a sweet start like [insert item if available – e.g., bananas or honey]. But mornings are when your body is more insulin-resistant — so starting with sugary foods can lead to big blood sugar spikes. Have some protein or fat first (e.g., turkey sausage, egg, avocado) to slow down absorption.
+
+        **🥦 Eat Veggies First**  
+        If your meals include pasta, rice, or bread, eat veggies or salad first. The fiber acts like a barrier and slows down carb absorption — making blood sugar easier to manage.
+
+        **🍽️ Eat In This Order:**  
+        Veggies → Protein/Fat → Carbs  
+        This simple order change can dramatically reduce blood sugar spikes.
+
+        **🧬 Pair Your Carbs**  
+        Got bread, granola bars, or crackers? Pair them with nut butter, cheese, or Greek yogurt. The added fat and protein help slow digestion.
+
+        **👟 Move After Meals**  
+        Even 10 minutes of walking after a meal can help flatten your glucose curve and aid digestion.
+
+        **🍏 Juice = Medicine, Not a Drink**  
+        Juice like [insert juice brand if available] works great for treating low blood sugar — but not for sipping throughout the day. Try water with lemon or a splash of juice instead.
+
+        **🥖 Choose Whole Over Processed**  
+        Highly processed foods (like [insert example from cart]) spike blood sugar faster. Opt for whole, fiber-rich versions when you can.
+
+        **🌾 Fiber = Power**  
+        Fiber slows digestion and supports blood sugar balance. Beans, whole grains, lentils, veggies — aim for more!
+
+        **🧘‍♀️ Sleep & Stress Matter**  
+        Poor sleep and stress can raise blood sugar. Prioritize rest and find calming rituals like yoga, walking, or mindfulness.
+
+        ✅ RULES:
+        - Never make up food items
+        - Do not give medical advice or suggest medication
+        - Use a friendly, informative tone that builds confidence
+        - Keep explanations evidence-based and specific
+        - Use appropriate food icons that match the items
+        - Analyze at least 5-7 items
+        - Keep the output under ~500 words
+        - Do not show the steps or internal structure to the user
+        - Maintain the exact wording of the top tips section, only personalizing the bracketed examples
+        - IMPORTANT: Use double line breaks between each food item to ensure proper formatting
+
+        Master Shop Record:
+        {st.session_state.master_record}
+        """
 
         # Process challenging foods only if not already in session state
         if st.session_state.challenging_foods_content is None:
