@@ -58,26 +58,26 @@ def display_paginated_foods_cached(food_items, page, is_helpful=True):
         
         with cols[0]:
             if page > 1:
-                if st.button("← Previous", key=f"prev_{is_helpful}_{page}", use_container_width=True):
+                # Use a unique key for each button to prevent conflicts
+                prev_key = f"prev_{is_helpful}_{page}"
+                if st.button("← Previous", key=prev_key, use_container_width=True):
                     if is_helpful:
                         st.session_state.helpful_foods_page = max(1, page - 1)
-                        st.rerun()  # Only rerun when page actually changes
                     else:
                         st.session_state.challenging_foods_page = max(1, page - 1)
-                        st.rerun()  # Only rerun when page actually changes
         
         with cols[1]:
             st.markdown(f"<div style='text-align: center'>Page {page} of {total_pages}</div>", unsafe_allow_html=True)
         
         with cols[2]:
             if page < total_pages:
-                if st.button("Next →", key=f"next_{is_helpful}_{page}", use_container_width=True):
+                # Use a unique key for each button to prevent conflicts
+                next_key = f"next_{is_helpful}_{page}"
+                if st.button("Next →", key=next_key, use_container_width=True):
                     if is_helpful:
                         st.session_state.helpful_foods_page = min(total_pages, page + 1)
-                        st.rerun()  # Only rerun when page actually changes
                     else:
                         st.session_state.challenging_foods_page = min(total_pages, page + 1)
-                        st.rerun()  # Only rerun when page actually changes
 
 def parse_food_items(content):
     """Parse food items from the content, maintaining exact formatting."""
@@ -615,7 +615,7 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
 
         STEP 2: Analyze Helpful Foods
         For each food that supports blood sugar control (low-GI, high-fiber, high-protein, or rich in healthy fats):
-        - List at least 5-7 items from their shopping list
+        - Identify all relevant items from their shopping list
         - Use appropriate food icons (🥑 for avocado, 🥛 for milk, 🥬 for vegetables, etc.)
         - Format each item EXACTLY as follows with double line breaks between items:
           **🥑 Food Item:** [name]  
@@ -632,8 +632,8 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
         - Use a friendly, informative tone that builds confidence
         - Keep explanations evidence-based and specific
         - Use appropriate food icons that match the items
-        - Analyze at least 5-7 items
-        - Keep the output under ~500 words
+        - Analyze ALL relevant items from the shopping list
+        - Keep explanations concise but informative
         - Do not show the steps or internal structure to the user
         - IMPORTANT: Use double line breaks between each food item to ensure proper formatting
 
@@ -713,7 +713,7 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
 
         STEP 1: Analyze Challenging Foods
         For each food that may hinder blood sugar control (high-GI, refined carbs, low fiber, low protein, or high in added sugar):
-        - List at least 5-7 items from their shopping list
+        - Identify all relevant items from their shopping list
         - Use appropriate food icons (🍞 for bread, 🍪 for cookies, 🥤 for sugary drinks, etc.)
         - Format each item EXACTLY as follows with double line breaks between items:
           **[icon] Food Item:** [name]  
@@ -765,8 +765,8 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
         - Use a friendly, informative tone that builds confidence
         - Keep explanations evidence-based and specific
         - Use appropriate food icons that match the items
-        - Analyze at least 5-7 items
-        - Keep the output under ~500 words
+        - Analyze ALL relevant items from the shopping list
+        - Keep explanations concise but informative
         - Do not show the steps or internal structure to the user
         - Maintain the exact wording of the top tips section, only personalizing the bracketed examples
         - IMPORTANT: Use double line breaks between each food item to ensure proper formatting
