@@ -134,12 +134,12 @@ st.markdown(
 st.markdown("""
 ### 👋 Welcome to AdaptTable – your household health co-pilot
 
-I'm here to make improving your household's health through food easier, more achievable, and more acceptable for everyone (yes, even you—Seafood-Skeptic-of-the-Deep 🐟🙅‍♂️).
-
-Learning how to manage a health condition—or simply eat better—can feel overwhelming:
+Learning how to use food to help manage a health condition—or simply to eat better—can feel overwhelming:
 - 🤔 *How am I doing with my current diet?*  
 - 🔄 *What exactly needs to change?*  
 - 👨‍👩‍👧 *How do I make changes that my whole household will actually accept?*
+
+I'm here to make improving your household's health through food easier, more achievable, and more acceptable - for everyone in the family  (yes, even you—Seafood-Skeptic-of-the-Deep 🐟🙅‍♂️).
 
 We'll start by analyzing your most recent grocery receipts to spot habits that might help—or hinder—your health goals.  
 From there, I'll offer realistic food swaps and tailor shopping, meal plans, and cooking strategies for your household's specific needs.
