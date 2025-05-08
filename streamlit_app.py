@@ -134,7 +134,7 @@ st.markdown(
 st.markdown("""
 ### 👋 Welcome to AdaptTable – your household health co-pilot
 
-Learning how to use food to help manage a health condition—or simply to eat better—can feel overwhelming:
+Learning how to use food to help manage a health condition—or simply eat better—can feel overwhelming:
 - 🤔 *How am I doing with my current diet?*  
 - 🔄 *What exactly needs to change?*  
 - 👨‍👩‍👧 *How do I make changes that my whole household will actually accept?*
