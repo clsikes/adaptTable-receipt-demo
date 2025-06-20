@@ -87,7 +87,7 @@ if "processing_times" not in st.session_state:
 st.sidebar.title("Model Selection")
 model_choice = st.sidebar.selectbox(
     "Select Model",
-    ["OpenAI GPT-4", "OpenAI GPT-3.5-Turbo", "Google Gemini 2.5"],
+    ["OpenAI GPT-4o", "OpenAI GPT-3.5-Turbo-0125", "Google Gemini 2.5"],
     index=0
 )
 
@@ -279,18 +279,18 @@ if st.session_state.current_step == "analysis":
             # Process with selected model
             start_time = time.time()
             
-            if model_choice == "OpenAI GPT-4":
+            if model_choice == "OpenAI GPT-4o":
                 response = client.chat.completions.create(
-                    model="gpt-4",
+                    model="gpt-4o",
                     messages=[
                         {"role": "system", "content": system_prompt_receipt_parser},
                         {"role": "user", "content": user_prompt_receipt_parser}
                     ]
                 )
                 cleaned_items_output = response.choices[0].message.content
-            elif model_choice == "OpenAI GPT-3.5-Turbo":
+            elif model_choice == "OpenAI GPT-3.5-Turbo-0125":
                 response = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
+                    model="gpt-3.5-turbo-0125",
                     messages=[
                         {"role": "system", "content": system_prompt_receipt_parser},
                         {"role": "user", "content": user_prompt_receipt_parser}
@@ -380,18 +380,18 @@ if st.session_state.current_step == "analysis":
             # Process with selected model
             start_time = time.time()
             
-            if model_choice == "OpenAI GPT-4":
+            if model_choice == "OpenAI GPT-4o":
                 pen_portrait_response = client.chat.completions.create(
-                    model="gpt-4",
+                    model="gpt-4o",
                     messages=[
                         {"role": "system", "content": system_message},
                         {"role": "user", "content": pen_portrait_prompt}
                     ]
                 )
                 pen_portrait_output = pen_portrait_response.choices[0].message.content
-            elif model_choice == "OpenAI GPT-3.5-Turbo":
+            elif model_choice == "OpenAI GPT-3.5-Turbo-0125":
                 pen_portrait_response = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
+                    model="gpt-3.5-turbo-0125",
                     messages=[
                         {"role": "system", "content": system_message},
                         {"role": "user", "content": pen_portrait_prompt}
@@ -501,18 +501,18 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
             with st.spinner("Analyzing helpful foods in your shopping list..."):
                 start_time = time.time()
                 
-                if model_choice == "OpenAI GPT-4":
+                if model_choice == "OpenAI GPT-4o":
                     response = client.chat.completions.create(
-                        model="gpt-4",
+                        model="gpt-4o",
                         messages=[
                             {"role": "system", "content": "You are a registered dietitian specializing in diabetes management."},
                             {"role": "user", "content": helpful_foods_prompt}
                         ]
                     )
                     helpful_foods_output = response.choices[0].message.content
-                elif model_choice == "OpenAI GPT-3.5-Turbo":
+                elif model_choice == "OpenAI GPT-3.5-Turbo-0125":
                     response = client.chat.completions.create(
-                        model="gpt-3.5-turbo",
+                        model="gpt-3.5-turbo-0125",
                         messages=[
                             {"role": "system", "content": "You are a registered dietitian specializing in diabetes management."},
                             {"role": "user", "content": helpful_foods_prompt}
@@ -636,18 +636,18 @@ if st.session_state.analysis_complete and st.session_state.show_helps_hinders an
             with st.spinner("Analyzing challenging foods in your shopping list..."):
                 start_time = time.time()
                 
-                if model_choice == "OpenAI GPT-4":
+                if model_choice == "OpenAI GPT-4o":
                     response = client.chat.completions.create(
-                        model="gpt-4",
+                        model="gpt-4o",
                         messages=[
                             {"role": "system", "content": "You are a registered dietitian specializing in diabetes management."},
                             {"role": "user", "content": challenging_foods_prompt}
                         ]
                     )
                     challenging_foods_output = response.choices[0].message.content
-                elif model_choice == "OpenAI GPT-3.5-Turbo":
+                elif model_choice == "OpenAI GPT-3.5-Turbo-0125":
                     response = client.chat.completions.create(
-                        model="gpt-3.5-turbo",
+                        model="gpt-3.5-turbo-0125",
                         messages=[
                             {"role": "system", "content": "You are a registered dietitian specializing in diabetes management."},
                             {"role": "user", "content": challenging_foods_prompt}
